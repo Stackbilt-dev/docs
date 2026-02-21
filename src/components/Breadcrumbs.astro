@@ -1,0 +1,21 @@
+---
+interface Props {
+  title: string;
+  tag: string;
+  color: string;
+}
+
+const { title, tag, color } = Astro.props;
+---
+
+<div class="border-b border-sb-border px-8 py-4 flex items-center gap-3 shrink-0" style={`background: linear-gradient(90deg, ${color}06 0%, transparent 60%)`}>
+  <span
+    class="text-[10px] font-terminal shrink-0"
+    style={`color: ${color}; text-shadow: 0 0 8px ${color}40`}
+  >
+    {tag}
+  </span>
+  <span class="text-[11px] font-terminal text-sb-text-1 tracking-wider uppercase">
+    {title}
+  </span>
+</div>

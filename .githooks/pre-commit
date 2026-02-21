@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] Building site to validate..."
+npm run build --silent
+
+echo "[pre-commit] Build passed."

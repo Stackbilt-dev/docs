@@ -1,0 +1,160 @@
+---
+import type { MarkdownHeading } from 'astro';
+import Sidebar from '../components/Sidebar.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import PrevNext from '../components/PrevNext.astro';
+import Search from '../components/Search.astro';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  tag: string;
+  color: string;
+  order: number;
+  slug: string;
+  headings: MarkdownHeading[];
+}
+
+const { title, tag, color, order, slug, headings } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} — StackBilt Docs</title>
+    <meta name="description" content={`${title} — StackBilt documentation`} />
+  </head>
+  <body class="h-screen w-screen bg-sb-bg text-sb-text-2 font-body flex flex-col overflow-hidden">
+    <!-- Ambient grid -->
+    <div class="fixed inset-0 pointer-events-none ambient-grid" />
+
+    <!-- Search overlay -->
+    <Search />
+
+    <!-- Top bar -->
+    <nav class="relative z-10 border-b border-sb-border px-6 py-3 flex items-center justify-between font-terminal shrink-0">
+      <div class="flex items-center gap-4">
+        <a
+          href="https://stackbilt.dev"
+          class="flex items-center gap-2 text-[11px] text-sb-muted hover:text-sb-amber transition-colors duration-75 tracking-wider"
+        >
+          <span class="text-[10px]">&larr;</span>
+          <span>STACKBILT</span>
+        </a>
+        <span class="text-sb-border">/</span>
+        <a href="/" class="text-[11px] text-sb-text-2 tracking-wider hover:text-sb-text-1 transition-colors duration-75">DOCS</a>
+      </div>
+      <div class="hidden sm:flex items-center gap-4 text-[10px] text-sb-dim">
+        <!-- Search trigger -->
+        <button
+          id="search-trigger"
+          class="flex items-center gap-2 hover:text-sb-amber transition-colors duration-75 tracking-wider cursor-pointer"
+        >
+          <span>SEARCH</span>
+          <kbd class="border border-sb-border px-1 py-0.5 text-[8px] leading-none">/</kbd>
+        </button>
+        <a
+          href="https://github.com/Stackbilt-dev/charter"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-sb-amber transition-colors duration-75 tracking-wider"
+        >
+          GITHUB
+        </a>
+        <a
+          href="https://www.npmjs.com/package/@stackbilt/cli"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover:text-sb-amber transition-colors duration-75 tracking-wider"
+        >
+          NPM
+        </a>
+      </div>
+    </nav>
+
+    <!-- Body: sidebar + content + ToC -->
+    <div class="relative z-10 flex flex-1 min-h-0 overflow-hidden">
+      <!-- Mobile nav toggle -->
+      <input type="checkbox" id="mobile-nav" class="peer hidden" />
+      <label
+        for="mobile-nav"
+        class="md:hidden fixed bottom-4 left-4 z-50 bg-sb-surface border border-sb-border rounded-lg px-3 py-2 text-[11px] font-terminal text-sb-muted hover:text-sb-amber cursor-pointer transition-colors"
+      >
+        MENU
+      </label>
+      <div class="fixed inset-0 z-40 bg-sb-bg/90 hidden peer-checked:block md:hidden">
+        <label for="mobile-nav" class="absolute inset-0 cursor-pointer" />
+        <aside class="relative z-50 w-64 h-full bg-sb-bg border-r border-sb-border overflow-y-auto flex flex-col">
+          <div class="px-4 py-3 border-b border-sb-border flex items-center justify-between">
+            <span class="text-[9px] font-terminal uppercase tracking-[.2em] text-sb-dim">Sections</span>
+            <label for="mobile-nav" class="text-sb-muted hover:text-sb-amber cursor-pointer text-xs">&times;</label>
+          </div>
+          <nav class="flex flex-col py-2" id="mobile-nav-links">
+          </nav>
+        </aside>
+      </div>
+
+      <Sidebar currentSlug={slug} />
+
+      <!-- Content -->
+      <main class="flex-1 min-w-0 overflow-y-auto flex">
+        <div class="flex-1 min-w-0">
+          <Breadcrumbs title={title} tag={tag} color={color} />
+          <div class="px-8 py-8 max-w-3xl">
+            <div class="prose">
+              <slot />
+            </div>
+          </div>
+
+          <!-- Edit on GitHub -->
+          <div class="px-8 pb-4 max-w-3xl">
+            <a
+              href={`https://github.com/Stackbilt-dev/stackbilt-docs/edit/main/src/content/docs/${slug}.md`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-[10px] font-terminal text-sb-dim hover:text-sb-amber transition-colors duration-75 tracking-wider"
+            >
+              EDIT ON GITHUB
+            </a>
+          </div>
+
+          <PrevNext currentOrder={order} />
+        </div>
+
+        <TableOfContents headings={headings} />
+      </main>
+    </div>
+
+    <!-- Code copy button + search trigger script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // Code copy buttons
+        document.querySelectorAll('pre').forEach((pre) => {
+          const btn = document.createElement('button');
+          btn.className = 'copy-btn';
+          btn.textContent = 'COPY';
+          btn.addEventListener('click', async () => {
+            const code = pre.querySelector('code');
+            if (code) {
+              await navigator.clipboard.writeText(code.textContent || '');
+              btn.textContent = 'COPIED';
+              setTimeout(() => { btn.textContent = 'COPY'; }, 1500);
+            }
+          });
+          pre.style.position = 'relative';
+          pre.appendChild(btn);
+        });
+
+        // Search trigger button
+        const searchTrigger = document.getElementById('search-trigger');
+        if (searchTrigger && window.__searchOpen) {
+          searchTrigger.addEventListener('click', window.__searchOpen);
+        }
+      });
+    </script>
+  </body>
+</html>

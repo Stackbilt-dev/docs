@@ -1,0 +1,48 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  currentOrder: number;
+}
+
+const { currentOrder } = Astro.props;
+const docs = await getCollection('docs');
+const sorted = docs.sort((a, b) => a.data.order - b.data.order);
+
+const currentIdx = sorted.findIndex((d) => d.data.order === currentOrder);
+const prev = currentIdx > 0 ? sorted[currentIdx - 1] : null;
+const next = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+---
+
+<div class="px-8 pb-8 max-w-3xl">
+  <div class="flex items-center justify-between border-t border-sb-border pt-6 font-terminal text-[11px]">
+    {prev ? (
+      <a
+        href={`/${prev.id.replace(/\.md$/, '')}`}
+        class="flex items-center gap-2 text-sb-muted hover:text-sb-amber transition-colors duration-75"
+      >
+        <span>&larr;</span>
+        <span>{prev.data.title}</span>
+      </a>
+    ) : (
+      <span />
+    )}
+    {next ? (
+      <a
+        href={`/${next.id.replace(/\.md$/, '')}`}
+        class="flex items-center gap-2 text-sb-muted hover:text-sb-amber transition-colors duration-75"
+      >
+        <span>{next.data.title}</span>
+        <span>&rarr;</span>
+      </a>
+    ) : (
+      <a
+        href="https://stackbilt.dev"
+        class="flex items-center gap-2 text-sb-muted hover:text-sb-amber transition-colors duration-75"
+      >
+        <span>Back to StackBilt</span>
+        <span>&rarr;</span>
+      </a>
+    )}
+  </div>
+</div>
