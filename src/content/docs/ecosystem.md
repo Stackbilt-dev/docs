@@ -72,7 +72,7 @@ The 6-mode pipeline (PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT) p
 
 Available via:
 - **Browser UI** at [stackbilt.dev](https://stackbilt.dev) (interactive)
-- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 19 tools)
+- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 21 tools)
 - **REST API** at `stackbilt.dev/api/flow/*` (direct HTTP)
 
 ### Lightweight Agent Pattern

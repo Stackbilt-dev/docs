@@ -114,7 +114,7 @@ const result = await client.callTool("runFullFlowAsync", {
 });
 ```
 
-## All 19 Tools
+## All 21 Tools
 
 ### Flow Execution
 

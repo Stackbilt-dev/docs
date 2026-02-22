@@ -281,7 +281,7 @@ Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:
 
 ## MCP Server
 
-The MCP server exposes all 19 Flow API tools for AI agent integration. See the [MCP Integration](/mcp) page for full tool documentation.
+The MCP server exposes all 21 Flow API tools for AI agent integration. See the [MCP Integration](/mcp) page for full tool documentation.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
