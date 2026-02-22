@@ -26,6 +26,7 @@ Charter is the open-source foundation. StackBilt Architect and Compass are comme
 |---------|-----|---------|
 | **StackBilt** | `stackbilt.dev` | Architecture generation, MCP server, scaffold engine |
 | **Compass** | `compass.stackbilt.dev` | Governance enforcement, blessed patterns, ADR ledger |
+| **Auth Worker** | `auth-tenant-v2` | Authentication service (Better Auth + D1, OAuth, SSO) |
 | **Img Forge** | `img-forge-mcp.kurt-543.workers.dev` | AI image generation for documentation |
 
 ## How They Fit Together
@@ -72,7 +73,7 @@ The 6-mode pipeline (PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT) p
 
 Available via:
 - **Browser UI** at [stackbilt.dev](https://stackbilt.dev) (interactive)
-- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 21 tools)
+- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 22 tools)
 - **REST API** at `stackbilt.dev/api/flow/*` (direct HTTP)
 
 ### Lightweight Agent Pattern

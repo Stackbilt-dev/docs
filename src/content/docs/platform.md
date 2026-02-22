@@ -74,6 +74,36 @@ When running a governed flow, architecture decisions are validated against bless
 
 Blessed patterns from Compass are injected into the ARCHITECT mode prompt automatically. Governance results (validations, persisted ADR IDs, warnings) are available via `getGovernanceStatus`.
 
+### Advanced Governance Configurations
+
+Enterprise plans unlock additional governance options:
+
+- **Domain Locking** (`domainLock`) — Locks domain entities after PRODUCT mode to prevent drift. Supports strictness levels, entity creation controls, and vendor allow/block lists.
+- **Per-Mode Quality Thresholds** (`qualityByMode`) — Set different minimum quality scores per execution mode.
+- **Quality Weighting** (`qualityWeighting`) — Hybrid local/CSA weighting for quality evaluation.
+
+## Plan Tiers & Quotas
+
+Every access key is associated with a plan tier that determines rate limits and feature access.
+
+| Quota | Free | Pro | Enterprise |
+|-------|------|-----|------------|
+| AI calls per day | 50 | 500 | Unlimited |
+| Flow runs per day | 10 | 100 | Unlimited |
+| Scaffolds per day | 1 | 10 | Unlimited |
+
+## AI Model Routing
+
+The platform routes AI requests to different providers based on plan tier.
+
+| Plan | Default Provider | Model |
+|------|-----------------|-------|
+| Free | Groq | Community model |
+| Pro | Anthropic | Claude |
+| Enterprise | OpenAI | GPT-5 |
+
+Premium models (e.g., Claude) require a Pro plan or higher. Users on the Free tier can bring their own Groq API key for additional capacity.
+
 ## Output Artifacts
 
 Each completed flow produces:

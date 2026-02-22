@@ -51,7 +51,7 @@ Response:
 POST /api/flow/full
 ```
 
-Kickoff is asynchronous — returns `flowId` immediately. Poll `/api/flow/:id/summary` for progress.
+Kickoff is asynchronous — returns `flowId` immediately. Poll `GET /api/flow/:id` for progress, or use the `getFlowSummary` MCP tool for a lightweight summary.
 
 **Request:**
 ```json
@@ -66,7 +66,7 @@ Kickoff is asynchronous — returns `flowId` immediately. Poll `/api/flow/:id/su
       "mode": "ADVISORY",
       "projectId": "your-project-id",
       "transport": "auto",
-      "qualityThreshold": 85
+      "qualityThreshold": 80
     }
   }
 }
@@ -87,15 +87,13 @@ Kickoff is asynchronous — returns `flowId` immediately. Poll `/api/flow/:id/su
 GET /api/flow/:id
 ```
 
-Returns the complete flow state (100KB+) including all mode outputs, structured artifacts, and contradiction reports. **For polling, use `/summary` instead.**
+Returns the complete flow state (100KB+) including all mode outputs, structured artifacts, and contradiction reports. **For lightweight polling, use the `getFlowSummary` MCP tool instead.**
 
-### Get Flow Summary (Lightweight)
+### Get Flow Summary (MCP Only)
 
-```
-GET /api/flow/:id/summary
-```
+**MCP-only operation.** This summary is not available as a direct REST call. Use the `getFlowSummary` MCP tool instead. The REST equivalent for full flow state is `GET /api/flow/:id`.
 
-Returns a compact (<2KB) progress summary. Recommended for polling.
+The `getFlowSummary` tool returns a compact (<2KB) progress snapshot. Recommended for polling from AI agents.
 
 ```json
 {
@@ -114,13 +112,25 @@ Returns a compact (<2KB) progress summary. Recommended for polling.
 }
 ```
 
-### Get Structured Artifact
+### Get Artifact (MCP Only)
+
+**MCP-only operation.** The `/artifacts/:MODE/structured` path does not exist as a REST route. Use the `getArtifact` MCP tool to retrieve a typed JSON artifact for a single mode.
+
+The actual REST artifact routes are:
 
 ```
-GET /api/flow/:id/artifacts/:MODE/structured
+GET /api/flow/:id/artifacts/:MODE
 ```
 
-Returns the typed JSON artifact for a single mode (2-5KB). Modes: `PRODUCT`, `UX`, `RISK`, `ARCHITECT`, `TDD`, `SPRINT`.
+Returns artifact metadata for a mode. Modes: `PRODUCT`, `UX`, `RISK`, `ARCHITECT`, `TDD`, `SPRINT`.
+
+```
+GET /api/flow/:id/artifacts/:MODE/content
+```
+
+Returns chunked artifact content for a mode.
+
+The `getArtifact` MCP tool combines these into a single typed response (2-5KB):
 
 ```json
 {
@@ -234,7 +244,7 @@ Generates a deployable Cloudflare Workers project from a completed flow.
 
 **Rate limiting:** 3 scaffolds per flow per 24 hours. Returns `429` if exceeded.
 
-**Generated files:** `wrangler.toml`, `package.json`, `tsconfig.json`, `worker/index.ts`, `schema.sql` (if D1), `routes/*.ts`, `worker/*-queue.ts`, `worker/middleware/*.ts`, `README.md`, `.gitignore`, `scripts/deploy.sh`
+**Generated files:** `wrangler.toml`, `package.json`, `tsconfig.json`, `worker/index.ts`, `schema.sql` (if D1), `routes/*.ts`, `worker/*-queue.ts`, `worker/middleware/*.ts`, `README.md`, `.gitignore`, `scripts/deploy.sh`, `.charter/config.json`, `governance.md`
 
 ## Structured Artifact Contract (v2)
 
@@ -254,10 +264,7 @@ Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:
 |----------|--------|-------------|
 | `/api/auth/me` | GET | Current authenticated identity |
 | `/api/auth/token` | POST | Exchange `ska_` key for Compass JWT |
-| `/api/auth/github/start` | GET | Begin GitHub OAuth |
-| `/api/auth/github/callback` | GET | OAuth callback |
-| `/api/auth/github/session` | GET | GitHub profile and session status |
-| `/api/auth/github/logout` | POST | Clear session |
+| `/api/auth/better/*` | ALL | Proxies to the dedicated auth-worker service (Better Auth). Supports session management, API key authentication, and OAuth Provider plugin. Replaces the previous GitHub OAuth flow. Specific sub-routes are handled by the auth-worker and include session introspection and token management. |
 | `/api/github/repos` | GET/POST | List or create GitHub repos |
 | `/api/github/publish-generated` | POST | Server-side codegen + full repo publish |
 
@@ -269,7 +276,45 @@ Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:
 | `/api/admin/access-keys` | GET | List keys (filter by userId, status) |
 | `/api/admin/access-keys/:id` | GET | Inspect one key |
 | `/api/admin/access-keys/:id/revoke` | POST | Revoke a key |
+| `/api/admin/access-keys/:id/rotate` | POST | Rotate an access key. Generates a new key and revokes the old one. Returns the new key value. |
+| `/api/admin/usage/:keyId` | GET | Per-key usage dashboard. Optional `?days=N` query param to filter by time window. Returns usage metrics. |
+| `/api/admin/trial/leads` | GET | List trial lead records with associated events. Query params: `limit` (number), `eventsPerLead` (number). |
 | `/api/keys/groq/self` | GET/POST/DELETE | Per-user GROQ key management |
+| `/api/codegen/locks/release` | POST | Release a codegen lock manually. Used to resolve stuck locks. |
+| `/api/codegen/locks/sweep` | POST | Sweep expired codegen locks across all active flows. |
+| `/api/codegen/audit/rollup` | POST | Trigger a codegen audit rollup. Aggregates lock and collision metrics. |
+
+## Trial Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/trial/start` | Start a trial session. Accepts `email` in the request body. Creates a 72-hour trial with 2 flow runs. Returns trial session ID and expiry. |
+| `GET` | `/api/trial/status` | Check current trial status. Returns remaining runs, expiry timestamp, and whether the trial is active. |
+| `POST` | `/api/trial/upgrade-intent` | Log upgrade interest from a trial user. Accepts `email` and optional `plan` preference. |
+
+Trial sessions are stored in LEADS KV. Each trial allows 2 flow runs within a 72-hour window.
+
+## Feedback
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/feedback/submit` | Submit feedback (bug report, feature request, or flow quality feedback). Rate limited to 5 submissions per day per IP. Stores in LEADS KV and sends admin notification via Resend. |
+
+**Request body fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `message` | string | yes | Feedback content |
+| `type` | enum | yes | `bug` \| `feature` \| `general` \| `flow-quality` |
+| `rating` | number | no | Score from 1–5 |
+| `flowId` | string | no | Associated flow ID |
+| `mode` | string | no | Associated flow mode |
+
+## Contact
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/contact` | Landing page contact form submission. Accepts `email`, `team`, and `source` fields. Sends notification via Resend. |
 
 ## Billing (Stripe)
 
