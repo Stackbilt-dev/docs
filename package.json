@@ -9,7 +9,14 @@
     "preview": "wrangler dev",
     "deploy": "astro build && wrangler deploy",
     "deploy:staging": "astro build && wrangler deploy --env staging",
-    "astro": "astro"
+    "astro": "astro",
+    "govern": "charter",
+    "govern:validate": "charter validate --ci",
+    "govern:audit": "charter audit",
+    "govern:drift": "charter drift --ci",
+    "govern:doctor": "charter doctor",
+    "charter:detect": "charter setup --detect-only --format json",
+    "charter:setup": "charter setup --preset worker --ci github --yes"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
@@ -18,6 +25,7 @@
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
+    "@stackbilt/cli": "0.1.20",
     "wrangler": "^4.67.0"
   }
 }

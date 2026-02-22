@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# Managed by Charter: commit-msg trailer normalizer
+set -eu
+
+msg_file="$1"
+
+governed_by="$(grep -i '^Governed-By:' "$msg_file" | tail -n 1 | sed -E 's/^[Gg]overned-[Bb]y:[[:space:]]*//')"
+resolves_request="$(grep -i '^Resolves-Request:' "$msg_file" | tail -n 1 | sed -E 's/^[Rr]esolves-[Rr]equest:[[:space:]]*//')"
+
+if [ -n "$governed_by" ]; then
+  git interpret-trailers --in-place --if-exists=replace --trailer "Governed-By: $governed_by" "$msg_file"
+fi
+
+if [ -n "$resolves_request" ]; then
+  git interpret-trailers --in-place --if-exists=replace --trailer "Resolves-Request: $resolves_request" "$msg_file"
+fi
