@@ -76,6 +76,8 @@ Blessed patterns from Compass are injected into the ARCHITECT mode prompt automa
 
 ### Advanced Governance Configurations
 
+For Compass route taxonomy and auth/MCP endpoints, see [Compass Governance API](/compass-governance-api).
+
 Enterprise plans unlock additional governance options:
 
 - **Domain Locking** (`domainLock`) — Locks domain entities after PRODUCT mode to prevent drift. Supports strictness levels, entity creation controls, and vendor allow/block lists.
@@ -94,15 +96,15 @@ Every access key is associated with a plan tier that determines rate limits and 
 
 ## AI Model Routing
 
-The platform routes AI requests to different providers based on plan tier.
+The platform applies a model policy per request. By default, provider/model selection is tier-aware (with per-request overrides and fallback chains available internally).
 
 | Plan | Default Provider | Model |
 |------|-----------------|-------|
-| Free | Groq | Community model |
-| Pro | Anthropic | Claude |
-| Enterprise | OpenAI | GPT-5 |
+| Free | Gemini | `gemini-2.5-flash-lite` |
+| Pro | Gemini | `gemini-2.5-pro` |
+| Enterprise | Anthropic | `claude-sonnet-4-6` |
 
-Premium models (e.g., Claude) require a Pro plan or higher. Users on the Free tier can bring their own Groq API key for additional capacity.
+Premium-tier model access is enforced by plan. Users can also configure a personal Groq API key for supported flows/endpoints.
 
 ## Output Artifacts
 

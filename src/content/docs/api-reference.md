@@ -16,7 +16,7 @@ Flows created on one environment do not exist on another (separate Durable Objec
 
 ## Authentication
 
-All API endpoints require authentication via one of:
+Authentication is endpoint-specific. Most protected endpoints accept one of:
 
 | Method | Header | Format |
 |--------|--------|--------|
@@ -25,6 +25,14 @@ All API endpoints require authentication via one of:
 | Compass JWT | `Authorization` | `Bearer <jwt>` (RS256) |
 
 `GET /mcp/info` is public (capability discovery / health check).
+
+Public/special-auth exceptions include:
+
+- `POST /api/webhooks/stripe` (Stripe signature-verified webhook)
+- `POST /api/trial/start` (public trial bootstrap)
+- `GET /api/trial/status` and `POST /api/trial/upgrade-intent` (trial token required, not access key)
+- `POST /api/self-serve/access-key` (public self-serve key issuance)
+- `POST /api/feedback/submit` and `POST /api/contact`
 
 ### Token Exchange
 
@@ -265,7 +273,9 @@ Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:
 | `/api/auth/me` | GET | Current authenticated identity |
 | `/api/auth/token` | POST | Exchange `ska_` key for Compass JWT |
 | `/api/auth/better/*` | ALL | Proxies to the dedicated auth-worker service (Better Auth). Supports session management, API key authentication, and OAuth Provider plugin. Replaces the previous GitHub OAuth flow. Specific sub-routes are handled by the auth-worker and include session introspection and token management. |
+| `/api/self-serve/access-key` | POST | Public self-serve `ska_` key issuance (rate limited, email-based) |
 | `/api/github/repos` | GET/POST | List or create GitHub repos |
+| `/api/github/publish` | POST | Publish a project to GitHub |
 | `/api/github/publish-generated` | POST | Server-side codegen + full repo publish |
 
 ## Admin Endpoints
@@ -275,6 +285,7 @@ Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:
 | `/api/admin/access-keys` | POST | Issue new access key |
 | `/api/admin/access-keys` | GET | List keys (filter by userId, status) |
 | `/api/admin/access-keys/:id` | GET | Inspect one key |
+| `/api/admin/access-keys/:id/link-compass` | POST | Provision/link Compass seat credentials for an existing access key |
 | `/api/admin/access-keys/:id/revoke` | POST | Revoke a key |
 | `/api/admin/access-keys/:id/rotate` | POST | Rotate an access key. Generates a new key and revokes the old one. Returns the new key value. |
 | `/api/admin/usage/:keyId` | GET | Per-key usage dashboard. Optional `?days=N` query param to filter by time window. Returns usage metrics. |
@@ -288,9 +299,11 @@ Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/trial/start` | Start a trial session. Accepts `email` in the request body. Creates a 72-hour trial with 2 flow runs. Returns trial session ID and expiry. |
+| `POST` | `/api/trial/start` | Start a trial session. Accepts `email` in the request body. Creates a 72-hour trial with 2 flow runs. Returns a `trialToken`, usage counters, and expiry. |
 | `GET` | `/api/trial/status` | Check current trial status. Returns remaining runs, expiry timestamp, and whether the trial is active. |
-| `POST` | `/api/trial/upgrade-intent` | Log upgrade interest from a trial user. Accepts `email` and optional `plan` preference. |
+| `POST` | `/api/trial/upgrade-intent` | Log upgrade intent for the current trial token. Accepts optional `trigger` and `note`. |
+
+`POST /api/trial/start` returns a `trialToken` plus usage counters (`runsAllowed`, `runsUsed`, `runsRemaining`) and `expiresAt`.
 
 Trial sessions are stored in LEADS KV. Each trial allows 2 flow runs within a 72-hour window.
 
@@ -326,7 +339,7 @@ Trial sessions are stored in LEADS KV. Each trial allows 2 flow runs within a 72
 
 ## MCP Server
 
-The MCP server exposes all 21 Flow API tools for AI agent integration. See the [MCP Integration](/mcp) page for full tool documentation.
+The MCP server exposes 22 tools for AI agent integration (flow execution/inspection plus related platform operations like feedback and artifact amendment). See the [MCP Integration](/mcp) page for full tool documentation.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|

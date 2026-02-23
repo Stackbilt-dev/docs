@@ -86,6 +86,8 @@ runFullFlowAsync → getFlowSummary polls → getArtifact per mode → getFlowSc
 
 ## Compass: Policy Brain
 
+For current Compass routes, auth endpoints, and MCP integration surfaces, see [Compass Governance API](/compass-governance-api).
+
 Compass is an AI governance agent with institutional memory — a ledger of ADRs, blessed patterns, and constitutional rules. It validates architecture decisions, runs red-team reviews, and drafts formal policy documents.
 
 ### Governance Modes by Plan
