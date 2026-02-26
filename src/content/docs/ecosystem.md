@@ -14,7 +14,7 @@ StackBilt is three complementary tools that enforce governance across the full d
 
 | Tool | License | Role |
 |------|---------|------|
-| **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime |
+| **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
 | **StackBilt Architect** | Commercial | Architecture generation, scaffold engine, structured artifacts |
 | **Compass** | Commercial | Governance policy brain, institutional memory, ADR ledger |
 
@@ -56,16 +56,22 @@ Charter: validate + drift → commit and stack compliance
 SHIPPED (governed)
 ```
 
-## Charter: Local Enforcement
+## Charter: Local Enforcement + ADF Context Compiler
 
 Charter runs in your terminal and CI pipeline. It validates commit trailers, scores drift against your blessed stack, and blocks merges on violations. Zero SaaS dependency — all checks are deterministic and local.
+
+Charter also ships **ADF (Attention-Directed Format)** — a modular, AST-backed context system that replaces monolithic `.cursorrules` and `claude.md` files with compiled, trigger-routed `.ai/` modules. ADF treats LLM context as a compiled language: emoji-decorated semantic keys, typed patch operations, manifest-driven progressive disclosure, and metric ceilings with CI evidence gating.
 
 ```bash
 npm install --save-dev @stackbilt/cli
 npx charter setup --preset fullstack --ci github --yes
+npx charter adf init    # scaffold .ai/ context directory
 ```
 
-Key commands: `charter validate`, `charter drift`, `charter audit`, `charter classify`, `charter hook install`.
+**Governance commands:** `validate`, `drift`, `audit`, `classify`, `hook install`.
+**ADF commands:** `adf init`, `adf fmt`, `adf patch`, `adf bundle`, `adf sync`, `adf evidence`.
+
+For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/stackbilt-dev/charter-kit/blob/main/papers/context-as-code-v1.1.md).
 
 ## StackBilt Architect: Architecture + Scaffold
 
@@ -131,7 +137,8 @@ Every significant decision flows through governance before implementation:
 4. **Record** — ADRs are persisted to the governance ledger (when `autoPersist: true`)
 5. **Scaffold** — StackBilt generates deployable project files
 6. **Commit** — Charter enforces `Governed-By:` trailer compliance at the repo level
-7. **CI** — Charter blocks merges on drift violations
+7. **Evidence** — Charter validates ADF metric ceilings (`adf evidence --auto-measure --ci`)
+8. **CI** — Charter blocks merges on drift violations or metric ceiling breaches
 
 ## Authentication Across Services
 
