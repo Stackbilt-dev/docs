@@ -23,6 +23,8 @@ npx charter validate --ci --format json    # machine-readable output
 npx charter validate --range HEAD~5..HEAD  # specific commit range
 ```
 
+**Default range detection:** When `--range` is omitted, Charter tries `main..HEAD` or `master..HEAD` first, then falls back to the most recent 5 commits.
+
 JSON output includes `policyOffenders` (missing required trailers) and `riskOffenders` (high-risk paths without governance), plus `effectiveRangeSource` and `defaultCommitRange` for agent transparency.
 
 ### charter drift
@@ -62,15 +64,40 @@ npx charter classify "migrate auth provider" --format json
 
 ### charter hook
 
-Installs git hooks that normalize governance trailers at commit time.
+Installs git hooks for commit-time governance enforcement.
 
 ```bash
-npx charter hook install --commit-msg
+npx charter hook install --commit-msg                # trailer normalization hook
+npx charter hook install --pre-commit                # ADF evidence gate hook
+npx charter hook install --commit-msg --pre-commit   # both hooks
+npx charter hook install --commit-msg --force        # overwrite existing hooks
 ```
+
+- `--commit-msg` — normalizes `Governed-By` and `Resolves-Request` trailers via `git interpret-trailers`
+- `--pre-commit` — runs ADF evidence checks (LOC ceiling validation) before each commit. Only gates when `.ai/manifest.adf` exists.
+- `--force` — overwrite existing non-Charter hooks
+
+Must specify at least one of `--commit-msg` or `--pre-commit`.
+
+### charter bootstrap
+
+One-command repo onboarding. Orchestrates detect + setup + ADF init + install + doctor in a single flow.
+
+```bash
+npx charter bootstrap                                         # interactive
+npx charter bootstrap --preset worker --ci github --yes       # fully automated
+npx charter bootstrap --skip-install --skip-doctor            # minimal
+```
+
+- `--ci github` — generate GitHub Actions governance workflow
+- `--preset <worker|frontend|backend|fullstack>` — stack preset
+- `--skip-install` — skip dependency installation phase
+- `--skip-doctor` — skip health check phase
+- `-y, --yes` — accept all prompts
 
 ### charter setup
 
-Bootstraps `.charter/` config and optionally writes CI workflow scaffolding.
+Bootstraps `.charter/` config and optionally writes CI workflow scaffolding. For full onboarding, prefer `charter bootstrap` which orchestrates setup + ADF init + install + doctor.
 
 ```bash
 npx charter setup --detect-only --format json
@@ -96,12 +123,16 @@ npx charter init --preset worker
 
 ### charter doctor
 
-Checks CLI installation and repository config health. Validates ADF readiness: manifest existence, manifest parse, default-load module presence, and sync lock status.
+Checks CLI installation and repository config health. Validates ADF readiness: manifest existence, manifest parse, default-load module presence, sync lock status, and agent config file migration status.
 
 ```bash
-npx charter doctor
-npx charter doctor --format json
+npx charter doctor                    # full diagnostics
+npx charter doctor --adf-only         # ADF checks only (skip Charter config)
+npx charter doctor --ci --format json # CI mode: exit 1 on warnings
 ```
+
+- `--adf-only` — run only ADF readiness checks, skip Charter config validation
+- `--ci` — non-interactive, exits with policy violation code on warnings
 
 ### charter why
 
@@ -124,6 +155,40 @@ npx charter adf init
 npx charter adf init --ai-dir ./context    # custom directory
 npx charter adf init --force               # overwrite existing
 ```
+
+### charter adf create
+
+Creates a new ADF module file and registers it in the manifest under `DEFAULT_LOAD` or `ON_DEMAND`.
+
+```bash
+npx charter adf create api-patterns                           # on-demand module (default)
+npx charter adf create core-rules --load default              # default-load module
+npx charter adf create react --triggers "react,jsx,component" # on-demand with triggers
+npx charter adf create api-patterns --force                   # overwrite existing
+```
+
+- `--load <default|on-demand>` — loading policy (default: `on-demand`)
+- `--triggers "a,b,c"` — comma-separated trigger keywords (for on-demand modules)
+- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
+- `--force` — overwrite existing module file
+
+### charter adf migrate
+
+Scans existing agent config files (`CLAUDE.md`, `.cursorrules`, `agents.md`, `GEMINI.md`, `copilot-instructions.md`), classifies their content, and migrates structured blocks into ADF modules. Replaces originals with thin pointers.
+
+```bash
+npx charter adf migrate --dry-run                # preview migration plan
+npx charter adf migrate --yes                    # execute migration
+npx charter adf migrate --source CLAUDE.md       # migrate a single file
+npx charter adf migrate --merge-strategy replace # overwrite existing sections
+npx charter adf migrate --no-backup              # skip .pre-adf-migrate.bak files
+```
+
+- `--dry-run` — preview changes without writing files
+- `--source <file>` — migrate a specific file instead of scanning all
+- `--merge-strategy <append|dedupe|replace>` — how to handle duplicates (default: `dedupe`)
+- `--no-backup` — skip creating backup files
+- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
 
 ### charter adf fmt
 
@@ -197,6 +262,7 @@ Output includes constraint results, weight summary (load-bearing / advisory / un
 | `--preset <name>` | Stack preset (`worker`, `frontend`, `backend`, `fullstack`) |
 | `--detect-only` | Setup mode: detect stack/preset and exit |
 | `--no-dependency-sync` | Setup mode: do not rewrite `@stackbilt/cli` devDependency |
+| `--force` | Overwrite existing files (hooks, ADF modules, config) |
 
 ## Exit Codes
 
