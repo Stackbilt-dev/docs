@@ -25,7 +25,7 @@
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
-    "@stackbilt/cli": "^0.3.1",
+    "@stackbilt/cli": "^0.4.2",
     "wrangler": "^4.67.0"
   }
 }
