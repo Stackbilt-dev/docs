@@ -8,6 +8,8 @@ tag: "04"
 
 # StackBilt Platform
 
+> **Architect v2 — Active Build.** The platform is in its v2 build cycle. Docs reflect the current stable surface; new capabilities are landing continuously.
+
 StackBilt is a governance-enforced architecture planning tool that produces sprint-ready ADRs, deployable scaffolds, and structured artifacts — not vague suggestions.
 
 ## The 6-Mode Pipeline
