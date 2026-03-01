@@ -22,7 +22,7 @@ This is a **static-output Astro documentation site** styled with Tailwind CSS an
 | Markdown | MDX + Shiki (`github-dark-default`) | via `@astrojs/mdx` |
 | Content | Astro Content Collections | Zod-typed frontmatter |
 | Deployment | Cloudflare Workers Static Assets | Wrangler 4.x |
-| Governance | Charter CLI (`@stackbilt/cli`) | 0.1.20 |
+| Governance | Charter CLI (`@stackbilt/cli`) | 0.4.2 |
 
 ### Package Manager
 
@@ -232,6 +232,7 @@ tag: "01"                  # Display tag shown in sidebar + search results
 | 5 | mcp.md | MCP Integration | platform | `#22d3ee` (cyan) |
 | 6 | ecosystem.md | Ecosystem | ecosystem | `#c084fc` (purple) |
 | 7 | api-reference.md | API Reference | platform | `#c084fc` (purple) |
+| 8 | compass-governance-api.md | Compass Governance API | platform | `#22d3ee` (cyan) |
 
 ### Section Color Conventions
 
