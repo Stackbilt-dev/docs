@@ -75,6 +75,9 @@ tag: "01"                  # Display tag shown in sidebar + search results
   - | 4 | platform.md | StackBilt Platform | platform | `#f472b6` (pink) |
   - | 5 | mcp.md | MCP Integration | platform | `#22d3ee` (cyan) |
   - | 6 | ecosystem.md | Ecosystem | ecosystem | `#c084fc` (purple) |
+  - | 7 | api-reference.md | API Reference | platform | `#c084fc` (purple) |
+  - | 8 | compass-governance-api.md | Compass Governance API | platform | `#22d3ee` (cyan) |
+  - | 9 | img-forge.md | img-forge API | platform | `#f472b6` (pink) |
   - ### Section Color Conventions
 - **charter** (open source CLI docs): green `#2ea043` or amber `#f59e0b`
 - **platform** (StackBilt product docs): pink `#f472b6`, cyan `#22d3ee`, or purple `#c084fc`
