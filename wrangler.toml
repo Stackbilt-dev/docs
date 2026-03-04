@@ -1,5 +1,10 @@
 name = "stackbilt-docs"
+account_id = "3ede775d1472c2c8e7fd90dbf492aa63"
 compatibility_date = "2026-02-21"
+
+[[routes]]
+pattern = "docs.stackbilt.dev/*"
+zone_name = "stackbilt.dev"
 
 [assets]
 directory = "./dist"
