@@ -1,0 +1,103 @@
+ADF: 0.1
+
+📋 CONTEXT:
+  - Frontend module scaffold
+  - Add framework-specific constraints and operational rules
+  - This is a **static-output Astro documentation site** styled with Tailwind CSS and deployed to Cloudflare's edge network via Wrangler.
+  - | Styling | Tailwind CSS | 3.4 (`sb-*` design tokens) |
+  - ### Package Manager
+**npm is the package manager for this repository.** A `package-lock.json` lockfile exists at the project root. Before executing any install or script command:
+1. Confirm `package-lock.json` exists (never `yarn.lock`, `pnpm-lock.yaml`, or `bun.lockb`).
+2. Use `npm` for all commands — `npm install`, `npm run <script>`, `npx`.
+3. Never run `yarn`, `pnpm`, or `bun` in this repository.
+### Runtime Constraints
+- **Static output only.** No SSR, no server endpoints, no dynamic routes at runtime.
+- **Dark-only.** All styling assumes dark background. No light mode.
+- **CSS classes** must use `sb-*` Tailwind tokens. Never use raw hex values.
+---
+  - This repo uses the **Charter CLI** (`@stackbilt/cli`) for local-first governance enforcement. Charter is StackBilt's own OSS compliance toolkit — this repo is itself a governed Charter consumer.
+### Configuration
+- **Baseline**: `.charter/config.json` — stack preset `worker`, drift threshold 0.7
+- **Git hook**: `.githooks/commit-msg` — validates governance trailers on every commit
+- **CI gate**: `.github/workflows/charter-governance.yml` — runs on every PR to `main`
+- **Citation strictness**: `WARN` (non-blocking initially; tighten to `FAIL` when team is ready)
+### Charter Commands
+```bash
+npm run govern              # Display governance posture snapshot
+npm run govern:validate     # Validate governance trailers in recent commits
+npm run govern:audit        # Full policy coverage audit
+npm run govern:drift        # Detect architectural drift
+npm run govern:doctor       # Validate Charter config
+```
+### Governance Trailers
+Commits must include a `Governed-By` trailer when changes are **LOCAL** or **CROSS_CUTTING** scope:
+```
+docs(mcp): add submitFeedback tool
+Governed-By: CLAUDE.md#2-charter-governance
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+Use `charter classify "<change>"` to determine the correct scope before committing. **SURFACE**-only changes (UI tweaks, typo fixes) do not require a trailer.
+### Skills
+  - ```
+├── src/
+│   ├── content/
+│   │   ├── config.ts          # Content collection schema (Zod)
+│   │   └── docs/              # Markdown doc pages
+│   │       ├── getting-started.md
+│   │       ├── cli-reference.md
+│   │       ├── ci-integration.md
+│   │       ├── platform.md
+│   │       ├── mcp.md
+│   │       ├── ecosystem.md
+│   │       └── api-reference.md
+│   ├── components/
+│   │   ├── Breadcrumbs.astro
+│   │   ├── PrevNext.astro
+│   │   ├── Search.astro
+│   │   ├── Sidebar.astro
+│   │   └── TableOfContents.astro
+│   ├── layouts/
+│   │   └── DocsLayout.astro
+│   ├── pages/
+│   │   ├── index.astro        # Redirects to /getting-started
+│   │   └── [...slug].astro    # Dynamic doc page renderer
+│   └── styles/
+│       └── global.css         # Terminal-aesthetic design system
+├── public/
+│   └── favicon.svg
+├── astro.config.mjs
+├── tailwind.config.mjs
+├── wrangler.toml              # Workers static assets config
+├── package.json
+└── tsconfig.json
+```
+  - ### Color Tokens (`sb-*` namespace in Tailwind)
+  - | Token | Hex | Usage |
+  - |-------|-----|-------|
+  - | `sb-bg` | `#050508` | Page background |
+  - | `sb-surface` | `#0a0e16` | Cards, code blocks |
+  - | `sb-hover` | `#0f1420` | Hover states |
+  - | `sb-border` | `#1a2030` | Borders |
+  - | `sb-text-1` | `#e6edf3` | Primary text |
+  - | `sb-text-2` | `#b8c0cc` | Secondary text |
+  - | `sb-muted` | `#5c6370` | Muted/label text |
+  - | `sb-dim` | `#353b47` | Dimmed elements |
+  - | `sb-faint` | `#1c2028` | Subtle backgrounds |
+  - | `sb-amber` | `#f5a623` | Primary accent (links, headings, highlights) |
+  - ### Typography
+- **Headings**: Inter (sans-serif)
+- **Body**: Inter (sans-serif), 0.875rem, 1.75 line-height
+- **Code/Terminal**: SF Mono, Cascadia Code, JetBrains Mono
+- **H2 style**: Uppercase, terminal font, amber, 0.08em tracking
+### Visual Identity
+- Dark-only terminal aesthetic (no light mode)
+- Amber as primary accent throughout
+- Code blocks have terminal chrome (dot decorations)
+- Lists use `>` prefix (unordered) and zero-padded numbers (ordered)
+- Ambient diagonal grid overlay at 0.02 opacity
+  - - **Component filenames**: PascalCase (e.g., `Sidebar.astro`)
+- **Doc filenames**: kebab-case (e.g., `api-reference.md`)
+- **CSS classes**: Use `sb-*` Tailwind tokens, avoid raw hex values
+- **No light mode**: All styling assumes dark background
+- **Static output only**: No SSR, no server endpoints, no dynamic routes at runtime
+  - | **Edgestack-Architech** | Main StackBilt platform (Workers backend + React frontend) |

@@ -1,42 +1,44 @@
 # Deploy
 
-Run the pre-deployment runbook and deploy to Cloudflare Workers.
+Build and deploy to Cloudflare Workers with automatic credential handling.
 
 ## Instructions
 
-### Step 1: Build Verification
+### Step 1: Source Credentials
 
-1. Run `npm run build` and capture the full output.
-2. If the build **succeeds with zero errors**:
-   - Report: "Build passed. `dist/` ready."
-   - Proceed to Step 2.
-3. If the build **fails**:
-   - Read the error output carefully.
-   - Diagnose the root cause. Classify it as one of:
-     - **Astro compilation error** (bad imports, missing components, invalid frontmatter)
-     - **Tailwind config issue** (unknown utility, missing token)
-     - **Content schema violation** (frontmatter doesn't match Zod schema in `src/content/config.ts`)
-     - **Missing dependency** (module not found)
-   - Report the diagnosis to the user.
-   - **Do NOT proceed to deployment.** Stop and wait for instructions.
-4. If the build produces **warnings** about missing frontmatter fields, broken imports, or deprecated APIs:
-   - Report each warning.
-   - Ask the user whether to proceed or fix first.
+1. Read `.dev.vars` at the project root.
+2. Extract `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+3. If the file is missing or credentials are not found, stop and tell the user.
 
-### Step 2: Environment Selection
+### Step 2: Build Verification
 
-5. Determine the target environment:
-   - If the user said "staging", "stage", or "preview" → use `npm run deploy:staging`
-   - If the user said "production", "prod", or "deploy" → use `npm run deploy`
-   - If the user did not specify → **default to staging** and confirm:
-     > "No environment specified. Deploying to **staging**. Confirm, or say 'production' for prod."
-   - **Wait for confirmation before deploying to production.**
+4. Run `npm run build` and capture full output.
+5. If the build **succeeds with zero errors**:
+   - Report: "Build passed. Proceeding to deploy."
+   - Proceed to Step 3.
+6. If the build **fails**:
+   - Diagnose the root cause (Astro compilation, Tailwind config, content schema, missing dependency).
+   - Report the diagnosis. **Do NOT proceed to deployment.** Stop and wait.
+7. If the build produces **warnings** (missing frontmatter, broken imports, deprecated APIs):
+   - Report each warning. Ask whether to proceed or fix first.
 
-### Step 3: Deploy
+### Step 3: Environment Selection
 
-6. Run the deploy command for the selected environment.
-7. Report the deployment result (success or failure).
-8. If deployment fails, diagnose the Wrangler error and report. Do NOT retry without user instruction.
+8. Determine target from user arguments (`$ARGUMENTS`):
+   - `staging`, `stage`, `preview` → use `npm run deploy:staging`
+   - `production`, `prod`, `live`, or no argument → use `npm run deploy`
+   - When deploying to production with no explicit argument, proceed without asking (this is the default target for this project).
+
+### Step 4: Deploy
+
+9. Run the deploy command with credentials injected:
+   ```
+   CLOUDFLARE_API_TOKEN=<token> CLOUDFLARE_ACCOUNT_ID=<account_id> npm run deploy
+   ```
+10. Report the deployment result including the live URL.
+11. The production URL is: **https://docs.stackbilt.dev**
+12. The workers.dev URL is: **https://stackbilt-docs.blue-pine-edf6.workers.dev**
+13. If deployment fails, diagnose the Wrangler error. Do NOT retry without user instruction.
 
 ## User Request
 

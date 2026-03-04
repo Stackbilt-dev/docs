@@ -1,0 +1,107 @@
+ADF: 0.1
+
+📋 CONTEXT [advisory]:
+  - This file provides guidance to Claude Code when working in this repository.
+These rules override all default behavior. Follow them exactly as written.
+---
+# StackBilt Docs
+Public documentation site for the StackBilt platform, Charter CLI, and Compass governance system.
+---
+  - | Layer | Technology | Version |
+  - |-------|-----------|---------|
+  - | Framework | Astro | 5.x |
+  - | Markdown | MDX + Shiki (`github-dark-default`) | via `@astrojs/mdx` |
+  - | Content | Astro Content Collections | Zod-typed frontmatter |
+  - | Deployment | Cloudflare Workers Static Assets | Wrangler 4.x |
+  - | Governance | Charter CLI (`@stackbilt/cli`) | 0.6.0 |
+  - | Skill | What it does |
+  - |-------|-------------|
+  - | `/classify` | Run `charter classify` on a planned change to determine scope |
+  - | `/validate` | Run `charter validate --ci` and report trailer compliance |
+  - | `/audit` | Run `charter audit` and report policy coverage |
+  - | `/drift` | Run `charter drift --ci` and report architectural drift |
+  - ---
+  - Every interaction is a **focused sprint** scoped to a single deliverable.
+### Rules
+1. **One task, one outcome.** Do not combine content updates + deployment + tooling in one session.
+2. **Stop-and-confirm.** When done, state exactly what was delivered. Do not auto-start the next task or suggest improvements.
+3. **Sprint-ready tasks only.** Every task must have a concrete, verifiable outcome achievable in one session.
+4. **Diagnose before fixing.** For build or rendering issues, identify the root cause before editing files.
+5. **No scope creep.** If a task reveals adjacent work (e.g., a broken link discovered while editing a page), note it and stop. Do not fix it unless the user requests it.
+6. **No chaining.** After completing a deliverable, do not propose or begin the next task. Wait for the user.
+### Documentation Update Sessions
+When updating doc pages in `src/content/docs/`:
+- Read the target file before editing.
+- Preserve existing frontmatter (`title`, `section`, `order`, `color`, `tag`) unless the user explicitly requests changes.
+- Validate that edits do not break the Content Collection schema defined in `src/content/config.ts`.
+---
+  - ### Pre-Deployment Runbook
+Before running any deploy command, follow this sequence exactly:
+```
+Step 1: npm run build          # Verify Astro build succeeds locally
+Step 2: Inspect build output   # Check dist/ for expected pages
+Step 3: npm run deploy         # Only if Step 1 passed cleanly
+```
+### Rules
+1. **Build before deploy.** Never run `npm run deploy` or `npm run deploy:staging` without first confirming `npm run build` (equivalently, `astro build`) succeeds with zero errors.
+2. **Diagnose before retry.** If the build fails, read the error output and identify whether it is an Astro compilation error, a Tailwind config issue, a content schema violation, or a missing dependency. Fix the root cause before re-running.
+3. **No deploy on red.** If the build produces warnings about missing frontmatter fields, broken imports, or deprecated APIs, resolve them before deploying.
+4. **Staging first.** When the user has not specified an environment, prefer `npm run deploy:staging` over `npm run deploy` and confirm with the user before targeting production.
+### Available Scripts
+```bash
+npm run dev              # Astro dev server (hot reload)
+npm run build            # Build static HTML to dist/
+npm run preview          # Preview via wrangler dev (local Workers)
+npm run deploy           # Build + deploy to Cloudflare Workers (production)
+npm run deploy:staging   # Build + deploy to Cloudflare Workers (staging)
+```
+---
+  - Every doc page in `src/content/docs/` requires this frontmatter:
+```yaml
+---
+title: "Page Title"       # Displayed in sidebar, breadcrumb, search
+section: "charter"         # Grouping: charter | platform | ecosystem
+order: 1                   # Numeric sort order (determines sidebar + prev/next nav)
+color: "#2ea043"           # Hex color for tag dot, sidebar highlight, breadcrumb tint
+tag: "01"                  # Display tag shown in sidebar + search results
+---
+```
+### Current Doc Map
+  - | Order | File | Title | Section | Color |
+  - |-------|------|-------|---------|-------|
+  - | 1 | getting-started.md | Getting Started | charter | `#2ea043` (green) |
+  - | 2 | cli-reference.md | CLI Reference | charter | `#f59e0b` (amber) |
+  - | 3 | ci-integration.md | CI Integration | charter | `#f59e0b` (amber) |
+  - | 4 | platform.md | StackBilt Platform | platform | `#f472b6` (pink) |
+  - | 5 | mcp.md | MCP Integration | platform | `#22d3ee` (cyan) |
+  - | 6 | ecosystem.md | Ecosystem | ecosystem | `#c084fc` (purple) |
+  - ### Section Color Conventions
+- **charter** (open source CLI docs): green `#2ea043` or amber `#f59e0b`
+- **platform** (StackBilt product docs): pink `#f472b6`, cyan `#22d3ee`, or purple `#c084fc`
+- **ecosystem** (cross-service docs): purple `#c084fc`
+  - 1. Create `src/content/docs/<slug>.md` with required frontmatter
+2. Set `order` to the next available number
+3. Choose `section` and `color` per conventions above
+4. Set `tag` to zero-padded order (e.g., `"08"`)
+5. The page auto-appears in sidebar, search, and prev/next nav
+  - | Repo | Purpose |
+  - |------|---------|
+  - | **stackbilt_docs_v2** | This repo — public documentation site |
+
+⚠ CONSTRAINTS [load-bearing]:
+  - Use Conventional Commits (feat, fix, docs, chore)
+  - Never commit secrets or credentials
+  - Pure functions in library code; side effects only in entry points
+
+📖 GUIDE [advisory]:
+  - Pure runtime/environment? (OS, line endings) → CLAUDE.md, not ADF
+  - Universal architecture constraint? → core.adf CONSTRAINTS [load-bearing]
+  - Stack-specific operational rule? → domain .adf module (backend.adf, frontend.adf)
+  - Agent identity/behavior? → core.adf CONTEXT
+  - Language/tooling discipline? → core.adf CONSTRAINTS or dedicated section
+  - [load-bearing] = violation causes incorrect output
+  - [advisory] = best practice, not enforced
+  - Section types are open: CONTEXT, CONSTRAINTS, ADVISORY, METRICS, custom
+
+📊 METRICS:
+  entry_loc: 0 / 500 [lines]

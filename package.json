@@ -16,16 +16,20 @@
     "govern:drift": "charter drift --ci",
     "govern:doctor": "charter doctor",
     "charter:detect": "charter setup --detect-only --format json",
-    "charter:setup": "charter setup --preset worker --ci github --yes"
+    "charter:setup": "charter setup --preset docs --ci github --yes",
+    "verify:adf": "charter doctor --adf-only --ci --format json && charter adf evidence --auto-measure --ci --format json",
+    "charter:doctor": "charter doctor --format json",
+    "charter:adf:bundle": "charter adf bundle --task \"describe task\" --format json"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.0",
+    "@astrojs/sitemap": "^3.7.0",
     "@astrojs/tailwind": "^6.0.2",
     "astro": "^5.7.10",
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
-    "@stackbilt/cli": "^0.4.2",
+    "@stackbilt/cli": "0.6.0",
     "wrangler": "^4.67.0"
   }
 }
