@@ -1,5 +1,6 @@
 ---
 title: "Ecosystem"
+description: "How Charter, EdgeStack, and Compass work together. Service map, authentication flows, and governance-first development lifecycle."
 section: "ecosystem"
 order: 6
 color: "#c084fc"
@@ -15,19 +16,19 @@ StackBilt is three complementary tools that enforce governance across the full d
 | Tool | License | Role |
 |------|---------|------|
 | **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
-| **StackBilt Architect** | Commercial | Architecture generation, scaffold engine, structured artifacts |
+| **EdgeStack** | Commercial | Architecture generation, scaffold engine, structured artifacts |
 | **Compass** | Commercial | Governance policy brain, institutional memory, ADR ledger |
 
-Charter is the open-source foundation. StackBilt Architect and Compass are commercial services.
+Charter is the open-source foundation. EdgeStack and Compass are commercial services.
 
 ## Service Map
 
 | Service | URL | Purpose |
 |---------|-----|---------|
 | **StackBilt** | `stackbilt.dev` | Architecture generation, MCP server, scaffold engine |
-| **Compass** | `compass.stackbilt.dev` | Governance enforcement, blessed patterns, ADR ledger |
+| **Compass** | via EdgeStack service binding | Governance enforcement, blessed patterns, ADR ledger |
 | **Auth Worker** | `auth-tenant-v2` | Authentication service (Better Auth + D1, OAuth, SSO) |
-| **Img Forge** | `img-forge-mcp.kurt-543.workers.dev` | AI image generation for documentation |
+| **img-forge** | `imgforge.stackbilt.dev` | AI image generation for documentation |
 
 ## How They Fit Together
 
@@ -40,14 +41,14 @@ Compass: governance("Can we build X?")
   ├── REJECTED ──► Stop
   │
   ▼ APPROVED
-StackBilt: runFullFlowAsync(idea)
+EdgeStack: runFullFlowAsync(idea)
   → PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT
   │
   ▼
 Compass: red_team(architecture) → security review
   │
   ▼
-StackBilt: getFlowScaffold(flowId) → deployable project
+EdgeStack: getFlowScaffold(flowId) → deployable project
   │
   ▼
 Charter: validate + drift → commit and stack compliance
@@ -75,7 +76,7 @@ npx charter adf init    # scaffold .ai/ context directory
 For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/stackbilt-dev/charter-kit/blob/main/papers/context-as-code-v1.1.md).
 <!-- DOCSYNC:END:charter-oss-ecosystem -->
 
-## StackBilt Architect: Architecture + Scaffold
+## EdgeStack: Architecture + Scaffold
 
 The 6-mode pipeline (PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT) produces structured artifacts with cross-referenced IDs. After completion, the scaffold engine generates a deployable Cloudflare Workers project.
 
@@ -110,7 +111,7 @@ When governance mode is capped by plan tier, a soft upsell prompt appears in the
 
 ### Blessed Patterns
 
-Compass maintains a ledger of approved technology patterns. These are injected into StackBilt's ARCHITECT prompt automatically when governance is enabled. Example:
+Compass maintains a ledger of approved technology patterns. These are injected into EdgeStack's ARCHITECT prompt automatically when governance is enabled. Example:
 
 - Compute: Cloudflare Workers (not AWS Lambda)
 - Database: Cloudflare D1 (not PostgreSQL)
@@ -119,7 +120,7 @@ Compass maintains a ledger of approved technology patterns. These are injected i
 
 ### CSA Transport Modes
 
-Communication between StackBilt and Compass supports multiple transports:
+Communication between EdgeStack and Compass supports multiple transports:
 
 | Transport | Description |
 |-----------|-------------|
@@ -134,10 +135,10 @@ Canary rollout percentage is configurable per-flow or via environment default.
 Every significant decision flows through governance before implementation:
 
 1. **Pre-approval** — Compass validates the idea against policy
-2. **Architecture** — StackBilt generates a governed blueprint with blessed patterns
+2. **Architecture** — EdgeStack generates a governed blueprint with blessed patterns
 3. **Review** — Compass red-teams the architecture output
 4. **Record** — ADRs are persisted to the governance ledger (when `autoPersist: true`)
-5. **Scaffold** — StackBilt generates deployable project files
+5. **Scaffold** — EdgeStack generates deployable project files
 6. **Commit** — Charter enforces `Governed-By:` trailer compliance at the repo level
 7. **Evidence** — Charter validates ADF metric ceilings (`adf evidence --auto-measure --ci`)
 8. **CI** — Charter blocks merges on drift violations or metric ceiling breaches
@@ -146,7 +147,7 @@ Every significant decision flows through governance before implementation:
 
 ### Unified Auth (Recommended)
 
-One access key works at both StackBilt and Compass:
+One access key works at both EdgeStack and Compass:
 
 ```bash
 # Exchange ska_ key for a JWT
@@ -163,7 +164,7 @@ For automated pipelines, each service has its own token:
 ```json
 {
   "edgestack": { "url": "https://stackbilt.dev/mcp", "token": "EDGESTACK_MCP_TOKEN" },
-  "compass": { "url": "https://compass.stackbilt.dev/mcp", "token": "CSA_MCP_TOKEN" },
-  "imgforge": { "url": "https://img-forge-mcp.kurt-543.workers.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" }
+  "compass": { "url": "https://stackbilt.dev/mcp", "transport": "service_binding", "token": "CSA_MCP_TOKEN" },
+  "imgforge": { "url": "https://imgforge.stackbilt.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" }
 }
 ```

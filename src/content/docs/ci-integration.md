@@ -1,5 +1,6 @@
 ---
 title: "CI Integration"
+description: "Add Charter governance checks to GitHub Actions, GitLab CI, and other pipelines. Validate commits, detect drift, and block non-compliant merges."
 section: "charter"
 order: 3
 color: "#f59e0b"

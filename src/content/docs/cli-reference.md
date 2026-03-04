@@ -1,5 +1,6 @@
 ---
 title: "CLI Reference"
+description: "Complete command reference for Charter CLI. Every command, flag, and option for governance validation, drift detection, and ADF context compilation."
 section: "charter"
 order: 2
 color: "#f59e0b"
@@ -90,7 +91,7 @@ npx charter bootstrap --skip-install --skip-doctor            # minimal
 ```
 
 - `--ci github` — generate GitHub Actions governance workflow
-- `--preset <worker|frontend|backend|fullstack>` — stack preset
+- `--preset <worker|frontend|backend|fullstack|docs>` — stack preset
 - `--skip-install` — skip dependency installation phase
 - `--skip-doctor` — skip health check phase
 - `-y, --yes` — accept all prompts
@@ -108,7 +109,7 @@ npx charter setup --preset fullstack --ci github --yes
 Setup-specific options:
 
 - `--ci github` — generate GitHub Actions governance workflow
-- `--preset <worker|frontend|backend|fullstack>` — stack preset
+- `--preset <worker|frontend|backend|fullstack|docs>` — stack preset
 - `--detect-only` — preview detection results without writing files
 - `--no-dependency-sync` — skip rewriting `@stackbilt/cli` devDependency
 
@@ -148,13 +149,40 @@ ADF (Attention-Directed Format) is Charter's modular AI context compiler. These 
 
 ### charter adf init
 
-Scaffolds `.ai/` directory with `manifest.adf`, `core.adf`, and `state.adf` modules. The scaffolded `core.adf` includes a `[load-bearing]` CONSTRAINTS section and a `METRICS [load-bearing]` section with starter LOC ceilings.
+Scaffolds `.ai/` directory with preset-aware modules. The scaffolded `core.adf` includes a `[load-bearing]` CONSTRAINTS section and a `METRICS [load-bearing]` section with starter LOC ceilings.
 
 ```bash
 npx charter adf init
-npx charter adf init --ai-dir ./context    # custom directory
-npx charter adf init --force               # overwrite existing
+npx charter adf init --ai-dir ./context       # custom directory
+npx charter adf init --force                  # overwrite existing
+npx charter adf init --emit-pointers          # generate thin pointer files
+npx charter adf init --module testing         # add a single module to existing .ai/
 ```
+
+- `--ai-dir <dir>` — custom directory path (default: `.ai`)
+- `--force` / `--yes` — overwrite existing manifest
+- `--emit-pointers` — generate thin pointer files (`CLAUDE.md`, `.cursorrules`, `agents.md`)
+- `--module <name>` — add a single module to existing `.ai/` (delegates to `adf create`)
+
+**Default scaffolding** (worker/frontend/backend/fullstack presets):
+
+| File | Purpose |
+|------|---------|
+| `manifest.adf` | Module registry with default-load and on-demand routing |
+| `core.adf` | Universal constraints, metrics, and project context |
+| `state.adf` | Current session state |
+| `frontend.adf` | Frontend module scaffold (triggers: React, CSS, UI) |
+| `backend.adf` | Backend module scaffold (triggers: API, Node, DB) |
+
+**Docs preset** (`--preset docs`):
+
+| File | Purpose |
+|------|---------|
+| `manifest.adf` | Docs-specific module routing |
+| `core.adf` | Universal constraints and metrics |
+| `state.adf` | Current session state |
+| `decisions.adf` | ADR and decision tracking (triggers: ADR, decision, rationale) |
+| `planning.adf` | Roadmap and milestone tracking (triggers: plan, milestone, phase, roadmap) |
 
 ### charter adf create
 
@@ -251,6 +279,31 @@ npx charter adf evidence --context-file metrics.json
 
 Output includes constraint results, weight summary (load-bearing / advisory / unweighted), sync status, advisory-only warnings, and a `nextActions` array.
 
+### charter adf metrics recalibrate
+
+Recalibrates metric baselines and ceilings from current measured LOC. Requires a rationale for every recalibration to maintain audit trail.
+
+```bash
+npx charter adf metrics recalibrate --auto-rationale                   # auto-generate rationale
+npx charter adf metrics recalibrate --reason "post-refactor baseline"  # custom rationale
+npx charter adf metrics recalibrate --headroom 20 --dry-run            # preview with 20% headroom
+npx charter adf metrics recalibrate --auto-rationale --format json     # machine-readable
+```
+
+- `--headroom <percent>` — percentage above current LOC for ceiling calculation (default: `15`, range: 1–200)
+- `--reason "<text>"` — required rationale text (mutually exclusive with `--auto-rationale`)
+- `--auto-rationale` — auto-generate rationale from headroom and metric count
+- `--dry-run` — preview recalibration without writing files
+- `--ai-dir <dir>` — custom `.ai/` directory (default: `.ai`)
+
+**Behavior:** Parses all METRICS sections across manifest modules, measures current source file line counts, calculates new ceilings as `ceil(current × (1 + headroom / 100))`, and appends entries to the `BUDGET_RATIONALES` section with format:
+
+```
+{metric}_{ISO_DATE}: {old} -> {new}, ceiling {oldCeiling} -> {newCeiling}; {rationale}
+```
+
+One of `--reason` or `--auto-rationale` is required.
+
 ## Global Flags
 
 | Flag | Effect |
@@ -259,7 +312,7 @@ Output includes constraint results, weight summary (load-bearing / advisory / un
 | `--format json` | Machine-readable output with stable schemas |
 | `--ci` | Non-interactive, deterministic exit codes |
 | `--yes` | Accept all prompts (for automation) |
-| `--preset <name>` | Stack preset (`worker`, `frontend`, `backend`, `fullstack`) |
+| `--preset <name>` | Stack preset (`worker`, `frontend`, `backend`, `fullstack`, `docs`) |
 | `--detect-only` | Setup mode: detect stack/preset and exit |
 | `--no-dependency-sync` | Setup mode: do not rewrite `@stackbilt/cli` devDependency |
 | `--force` | Overwrite existing files (hooks, ADF modules, config) |

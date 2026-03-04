@@ -1,5 +1,6 @@
 ---
 title: "Getting Started"
+description: "Install Charter CLI, configure governance presets, and enforce compliance in your first project in under five minutes."
 section: "charter"
 order: 1
 color: "#2ea043"
@@ -62,14 +63,18 @@ npx charter adf init
 npx charter doctor --format json
 ```
 
-This creates:
+This creates (for default presets):
 
 ```text
 .ai/
   manifest.adf    # Module registry: default-load vs on-demand with triggers
   core.adf        # Always-loaded: role, constraints, metric ceilings
   state.adf       # Session state: current task, decisions, blockers
+  frontend.adf    # Frontend module scaffold (on-demand, triggers: React, CSS, UI)
+  backend.adf     # Backend module scaffold (on-demand, triggers: API, Node, DB)
 ```
+
+For documentation-heavy repos, use `--preset docs` to get `decisions.adf` and `planning.adf` instead of frontend/backend modules.
 
 Edit `.ai/core.adf` to define your project constraints and LOC ceilings. The `METRICS [load-bearing]` section enforces hard limits that CI can gate on.
 

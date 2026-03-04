@@ -4,6 +4,7 @@ const docs = defineCollection({
   type: 'content',
   schema: z.object({
     title: z.string(),
+    description: z.string().optional(),
     section: z.string(),
     order: z.number(),
     color: z.string(),

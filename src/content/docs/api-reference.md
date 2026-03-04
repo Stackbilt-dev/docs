@@ -1,5 +1,6 @@
 ---
 title: "API Reference"
+description: "REST API reference for EdgeStack. Flow lifecycle, artifact retrieval, scaffold generation, and authentication endpoints."
 section: "platform"
 order: 7
 color: "#c084fc"

@@ -1,5 +1,6 @@
 ---
 title: "Compass Governance API"
+description: "Compass API surface and route taxonomy. MCP endpoints, governance ledger, blessed patterns, ADR management, and JWT authentication."
 section: "platform"
 order: 8
 color: "#22d3ee"
@@ -10,7 +11,7 @@ tag: "08"
 
 Compass is the governance system behind StackBilt. This page documents the current Compass API surface and route taxonomy implemented in the `DigitalCSA` worker.
 
-Base URL (production): `https://compass.stackbilt.dev`
+Base URL (production): accessed via EdgeStack service binding (not a public subdomain)
 
 ## What This Covers
 
