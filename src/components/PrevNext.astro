@@ -1,47 +1,69 @@
 ---
-import { getCollection } from 'astro:content';
+import { getNavigation } from '../lib/navigation';
 
 interface Props {
   currentOrder: number;
 }
 
 const { currentOrder } = Astro.props;
-const docs = await getCollection('docs');
-const sorted = docs.sort((a, b) => a.data.order - b.data.order);
+const { flat } = await getNavigation();
 
-const currentIdx = sorted.findIndex((d) => d.data.order === currentOrder);
-const prev = currentIdx > 0 ? sorted[currentIdx - 1] : null;
-const next = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
+const currentIdx = flat.findIndex((d) => d.order === currentOrder);
+const prev = currentIdx > 0 ? flat[currentIdx - 1] : null;
+const next = currentIdx < flat.length - 1 ? flat[currentIdx + 1] : null;
 ---
 
 <div class="px-8 pb-8 max-w-3xl">
-  <div class="flex items-center justify-between border-t border-sb-border pt-6 font-terminal text-[11px]">
+  <div class="grid grid-cols-2 gap-3 border-t border-sb-border pt-6">
     {prev ? (
       <a
-        href={`/${prev.id.replace(/\.md$/, '')}`}
-        class="flex items-center gap-2 text-sb-muted hover:text-sb-amber transition-colors duration-75"
+        href={`/${prev.slug}`}
+        class="group border border-sb-border/50 hover:border-sb-border p-4 transition-all duration-100 hover:bg-sb-surface/30"
       >
-        <span>&larr;</span>
-        <span>{prev.data.title}</span>
+        <div class="text-[9px] font-terminal text-sb-dim tracking-wider mb-2 flex items-center gap-1.5">
+          <span class="group-hover:text-sb-amber transition-colors duration-75">&larr;</span>
+          <span>PREVIOUS</span>
+        </div>
+        <div class="text-[11px] font-terminal text-sb-muted group-hover:text-sb-text-2 transition-colors duration-75 leading-tight">
+          {prev.title}
+        </div>
+        <div class="mt-1.5 flex items-center gap-1.5">
+          <span class="w-1 h-1 rounded-full" style={`background: ${prev.color}`} />
+          <span class="text-[8px] font-terminal text-sb-dim/50 uppercase tracking-wider">{prev.tag}</span>
+        </div>
       </a>
     ) : (
-      <span />
+      <div />
     )}
     {next ? (
       <a
-        href={`/${next.id.replace(/\.md$/, '')}`}
-        class="flex items-center gap-2 text-sb-muted hover:text-sb-amber transition-colors duration-75"
+        href={`/${next.slug}`}
+        class="group border border-sb-border/50 hover:border-sb-border p-4 transition-all duration-100 hover:bg-sb-surface/30 text-right"
       >
-        <span>{next.data.title}</span>
-        <span>&rarr;</span>
+        <div class="text-[9px] font-terminal text-sb-dim tracking-wider mb-2 flex items-center gap-1.5 justify-end">
+          <span>NEXT</span>
+          <span class="group-hover:text-sb-amber transition-colors duration-75">&rarr;</span>
+        </div>
+        <div class="text-[11px] font-terminal text-sb-muted group-hover:text-sb-text-2 transition-colors duration-75 leading-tight">
+          {next.title}
+        </div>
+        <div class="mt-1.5 flex items-center gap-1.5 justify-end">
+          <span class="text-[8px] font-terminal text-sb-dim/50 uppercase tracking-wider">{next.tag}</span>
+          <span class="w-1 h-1 rounded-full" style={`background: ${next.color}`} />
+        </div>
       </a>
     ) : (
       <a
         href="https://stackbilt.dev"
-        class="flex items-center gap-2 text-sb-muted hover:text-sb-amber transition-colors duration-75"
+        class="group border border-sb-border/50 hover:border-sb-border p-4 transition-all duration-100 hover:bg-sb-surface/30 text-right"
       >
-        <span>Back to StackBilt</span>
-        <span>&rarr;</span>
+        <div class="text-[9px] font-terminal text-sb-dim tracking-wider mb-2 flex items-center gap-1.5 justify-end">
+          <span>EXIT</span>
+          <span class="group-hover:text-sb-amber transition-colors duration-75">&rarr;</span>
+        </div>
+        <div class="text-[11px] font-terminal text-sb-muted group-hover:text-sb-text-2 transition-colors duration-75 leading-tight">
+          Back to StackBilt
+        </div>
       </a>
     )}
   </div>

@@ -11,23 +11,97 @@ const toc = headings.filter((h) => h.depth >= 2 && h.depth <= 3);
 
 {toc.length > 0 && (
   <nav class="hidden xl:block w-48 shrink-0 sticky top-0 self-start py-8 pr-4">
-    <div class="text-[9px] font-terminal uppercase tracking-[.2em] text-sb-dim mb-3">
+    <div class="text-[9px] font-terminal uppercase tracking-[.2em] text-sb-dim mb-3 flex items-center gap-2">
+      <span class="w-1 h-1 rounded-full bg-sb-amber/40" />
       On this page
     </div>
-    <ul class="flex flex-col gap-1.5">
-      {toc.map((heading) => (
-        <li>
-          <a
-            href={`#${heading.slug}`}
-            class:list={[
-              'text-[11px] font-terminal leading-tight transition-colors duration-75 hover:text-sb-amber block',
-              heading.depth === 2 ? 'text-sb-muted' : 'text-sb-dim pl-3',
-            ]}
-          >
-            {heading.text}
-          </a>
-        </li>
-      ))}
-    </ul>
+    <div class="relative">
+      <!-- Track line -->
+      <div class="absolute left-0 top-0 bottom-0 w-px bg-sb-border/30" />
+      <!-- Active indicator -->
+      <div id="toc-indicator" class="absolute left-0 w-px bg-sb-amber transition-all duration-150 opacity-0" style="height: 20px; top: 0;" />
+      <ul class="flex flex-col gap-0.5">
+        {toc.map((heading) => (
+          <li>
+            <a
+              href={`#${heading.slug}`}
+              data-toc-link={heading.slug}
+              class:list={[
+                'toc-link text-[11px] font-terminal leading-tight transition-all duration-100 hover:text-sb-amber block py-1',
+                heading.depth === 2 ? 'text-sb-muted pl-3' : 'text-sb-dim pl-6',
+              ]}
+            >
+              {heading.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   </nav>
 )}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const tocLinks = document.querySelectorAll<HTMLElement>('[data-toc-link]');
+    const indicator = document.getElementById('toc-indicator');
+    const contentArea = document.getElementById('content-area');
+    if (!tocLinks.length || !indicator || !contentArea) return;
+
+    const headingEls: HTMLElement[] = [];
+    tocLinks.forEach((link) => {
+      const el = document.getElementById(link.dataset.tocLink!);
+      if (el) headingEls.push(el);
+    });
+    if (!headingEls.length) return;
+
+    let activeSlug = '';
+    let ticking = false;
+
+    function updateActive(slug: string) {
+      if (slug === activeSlug) return;
+      activeSlug = slug;
+
+      tocLinks.forEach((link) => {
+        const isActive = link.dataset.tocLink === slug;
+        const isH3 = link.classList.contains('pl-6');
+
+        link.classList.remove('text-sb-amber', 'text-sb-muted', 'text-sb-dim');
+        if (isActive) {
+          link.classList.add('text-sb-amber');
+          // Position indicator
+          const container = link.closest('.relative') as HTMLElement;
+          if (container) {
+            const linkRect = link.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            indicator.style.top = `${linkRect.top - containerRect.top}px`;
+            indicator.style.height = `${linkRect.height}px`;
+            indicator.style.opacity = '1';
+          }
+        } else {
+          link.classList.add(isH3 ? 'text-sb-dim' : 'text-sb-muted');
+        }
+      });
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        let current = headingEls[0]?.id || '';
+        for (const el of headingEls) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 100) {
+            current = el.id;
+          }
+        }
+        updateActive(current);
+        ticking = false;
+      });
+    }
+
+    contentArea.addEventListener('scroll', onScroll, { passive: true });
+
+    // Set initial
+    if (headingEls[0]) updateActive(headingEls[0].id);
+  });
+</script>

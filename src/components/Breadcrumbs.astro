@@ -1,17 +1,36 @@
 ---
+import { SECTION_META } from '../lib/navigation';
+
 interface Props {
   title: string;
   tag: string;
   color: string;
+  section: string;
 }
 
-const { title, tag, color } = Astro.props;
+const { title, tag, color, section } = Astro.props;
+const sectionLabel = SECTION_META[section]?.label ?? section;
+const sectionColor = SECTION_META[section]?.color ?? color;
 ---
 
-<div class="border-b border-sb-border px-8 py-4 flex items-center gap-3 shrink-0" style={`background: linear-gradient(90deg, ${color}06 0%, transparent 60%)`}>
+<div
+  class="border-b border-sb-border px-8 py-4 flex items-center gap-2.5 shrink-0"
+  style={`background: linear-gradient(90deg, ${color}06 0%, transparent 50%)`}
+>
+  <span
+    class="w-1 h-1 rounded-full shrink-0"
+    style={`background: ${sectionColor}; box-shadow: 0 0 4px ${sectionColor}40`}
+  />
+  <span
+    class="text-[9px] font-terminal uppercase tracking-[.12em]"
+    style={`color: ${sectionColor}; opacity: 0.5`}
+  >
+    {sectionLabel}
+  </span>
+  <span class="text-sb-dim/30 text-[10px] font-terminal select-none">/</span>
   <span
     class="text-[10px] font-terminal shrink-0"
-    style={`color: ${color}; text-shadow: 0 0 8px ${color}40`}
+    style={`color: ${color}; text-shadow: 0 0 8px ${color}30`}
   >
     {tag}
   </span>

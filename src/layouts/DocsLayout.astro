@@ -1,22 +1,31 @@
 ---
 import type { MarkdownHeading } from 'astro';
+import { getNavigation } from '../lib/navigation';
 import Sidebar from '../components/Sidebar.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import Breadcrumbs from '../components/Breadcrumbs.astro';
 import PrevNext from '../components/PrevNext.astro';
 import Search from '../components/Search.astro';
+import Footer from '../components/Footer.astro';
 import '../styles/global.css';
 
 interface Props {
   title: string;
+  description?: string;
   tag: string;
   color: string;
   order: number;
   slug: string;
+  section: string;
   headings: MarkdownHeading[];
 }
 
-const { title, tag, color, order, slug, headings } = Astro.props;
+const { title, description, tag, color, order, slug, section, headings } = Astro.props;
+const { sections } = await getNavigation();
+
+const metaDescription = description || `${title} — Charter CLI and StackBilt platform documentation.`;
+const canonicalUrl = `https://docs.stackbilt.dev/${slug}`;
+const pageTitle = `${title} — Docs by Stackbilt`;
 ---
 
 <!doctype html>
@@ -25,8 +34,35 @@ const { title, tag, color, order, slug, headings } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title} — StackBilt Docs</title>
-    <meta name="description" content={`${title} — StackBilt documentation`} />
+    <link rel="canonical" href={canonicalUrl} />
+    <title>{pageTitle}</title>
+    <meta name="description" content={metaDescription} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Docs by Stackbilt" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={metaDescription} />
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": title,
+      "description": metaDescription,
+      "url": canonicalUrl,
+      "publisher": {
+        "@type": "Organization",
+        "name": "Stackbilt",
+        "url": "https://stackbilt.dev"
+      }
+    })} />
   </head>
   <body class="h-screen w-screen bg-sb-bg text-sb-text-2 font-body flex flex-col overflow-hidden">
     <!-- Ambient grid -->
@@ -48,20 +84,28 @@ const { title, tag, color, order, slug, headings } = Astro.props;
         <span class="text-sb-border">/</span>
         <a href="/" class="text-[11px] text-sb-text-2 tracking-wider hover:text-sb-text-1 transition-colors duration-75">DOCS</a>
       </div>
-      <div class="hidden sm:flex items-center gap-4 text-[10px] text-sb-dim">
-        <!-- Search trigger -->
+      <div class="flex items-center gap-4 text-[10px] text-sb-dim">
+        <!-- Search trigger (desktop) -->
         <button
           id="search-trigger"
-          class="flex items-center gap-2 hover:text-sb-amber transition-colors duration-75 tracking-wider cursor-pointer"
+          class="hidden sm:flex items-center gap-2 hover:text-sb-amber transition-colors duration-75 tracking-wider cursor-pointer"
         >
           <span>SEARCH</span>
           <kbd class="border border-sb-border px-1 py-0.5 text-[8px] leading-none">/</kbd>
         </button>
         <a
+          href="https://blog.stackbilt.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hidden sm:block hover:text-sb-amber transition-colors duration-75 tracking-wider"
+        >
+          BLOG
+        </a>
+        <a
           href="https://github.com/Stackbilt-dev/charter"
           target="_blank"
           rel="noopener noreferrer"
-          class="hover:text-sb-amber transition-colors duration-75 tracking-wider"
+          class="hidden sm:block hover:text-sb-amber transition-colors duration-75 tracking-wider"
         >
           GITHUB
         </a>
@@ -69,10 +113,17 @@ const { title, tag, color, order, slug, headings } = Astro.props;
           href="https://www.npmjs.com/package/@stackbilt/cli"
           target="_blank"
           rel="noopener noreferrer"
-          class="hover:text-sb-amber transition-colors duration-75 tracking-wider"
+          class="hidden sm:block hover:text-sb-amber transition-colors duration-75 tracking-wider"
         >
           NPM
         </a>
+        <!-- Search trigger (mobile) -->
+        <button
+          id="search-trigger-mobile"
+          class="sm:hidden flex items-center hover:text-sb-amber transition-colors duration-75 cursor-pointer"
+        >
+          <kbd class="border border-sb-border px-1.5 py-0.5 text-[9px] leading-none">/</kbd>
+        </button>
       </div>
     </nav>
 
@@ -82,18 +133,68 @@ const { title, tag, color, order, slug, headings } = Astro.props;
       <input type="checkbox" id="mobile-nav" class="peer hidden" />
       <label
         for="mobile-nav"
-        class="md:hidden fixed bottom-4 left-4 z-50 bg-sb-surface border border-sb-border rounded-lg px-3 py-2 text-[11px] font-terminal text-sb-muted hover:text-sb-amber cursor-pointer transition-colors"
+        class="md:hidden fixed bottom-4 left-4 z-50 bg-sb-surface border border-sb-border rounded px-3 py-2 text-[11px] font-terminal text-sb-muted hover:text-sb-amber cursor-pointer transition-colors mobile-menu-btn"
       >
         MENU
       </label>
-      <div class="fixed inset-0 z-40 bg-sb-bg/90 hidden peer-checked:block md:hidden">
+      <!-- Mobile sidebar overlay -->
+      <div class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden peer-checked:flex md:hidden">
         <label for="mobile-nav" class="absolute inset-0 cursor-pointer" />
-        <aside class="relative z-50 w-64 h-full bg-sb-bg border-r border-sb-border overflow-y-auto flex flex-col">
-          <div class="px-4 py-3 border-b border-sb-border flex items-center justify-between">
-            <span class="text-[9px] font-terminal uppercase tracking-[.2em] text-sb-dim">Sections</span>
-            <label for="mobile-nav" class="text-sb-muted hover:text-sb-amber cursor-pointer text-xs">&times;</label>
+        <aside class="relative z-50 w-72 h-full bg-sb-bg border-r border-sb-border overflow-y-auto flex flex-col mobile-sidebar">
+          <div class="px-5 py-4 border-b border-sb-border flex items-center justify-between">
+            <span class="text-[9px] font-terminal uppercase tracking-[.2em] text-sb-dim">Documentation</span>
+            <label for="mobile-nav" class="text-sb-muted hover:text-sb-amber cursor-pointer text-sm leading-none">&times;</label>
           </div>
-          <nav class="flex flex-col py-2" id="mobile-nav-links">
+          <nav class="flex-1 overflow-y-auto py-1">
+            {sections.map((sect, sIdx) => (
+              <div class:list={['pb-1', sIdx > 0 && 'border-t border-sb-border/40 mt-1']}>
+                <div class="px-5 pt-4 pb-2 flex items-center gap-2">
+                  <span
+                    class="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={`background: ${sect.color}; box-shadow: 0 0 6px ${sect.color}40`}
+                  />
+                  <span
+                    class="text-[9px] font-terminal uppercase tracking-[.15em]"
+                    style={`color: ${sect.color}; opacity: 0.7`}
+                  >
+                    {sect.label}
+                  </span>
+                </div>
+                {sect.items.map((item) => {
+                  const isActive = item.slug === slug;
+                  return (
+                    <a
+                      href={`/${item.slug}`}
+                      class:list={[
+                        'group flex items-center gap-3 px-5 py-3 transition-all duration-75 border-l-2 ml-3',
+                        isActive
+                          ? 'bg-sb-surface/80'
+                          : 'border-transparent hover:bg-sb-surface/30',
+                      ]}
+                      style={isActive ? `border-color: ${item.color}; box-shadow: inset 4px 0 16px -8px ${item.color}30` : ''}
+                    >
+                      <span
+                        class:list={[
+                          'text-[9px] font-terminal shrink-0 w-4 text-right',
+                          isActive ? '' : 'opacity-30',
+                        ]}
+                        style={`color: ${item.color}`}
+                      >
+                        {item.tag}
+                      </span>
+                      <span
+                        class:list={[
+                          'text-[12px] font-terminal leading-tight',
+                          isActive ? 'text-sb-text-1' : 'text-sb-muted',
+                        ]}
+                      >
+                        {item.title}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </aside>
       </div>
@@ -101,35 +202,39 @@ const { title, tag, color, order, slug, headings } = Astro.props;
       <Sidebar currentSlug={slug} />
 
       <!-- Content -->
-      <main class="flex-1 min-w-0 overflow-y-auto flex">
-        <div class="flex-1 min-w-0">
-          <Breadcrumbs title={title} tag={tag} color={color} />
-          <div class="px-8 py-8 max-w-3xl">
-            <div class="prose">
-              <slot />
+      <main class="flex-1 min-w-0 overflow-y-auto flex flex-col" id="content-area">
+        <div class="flex-1 min-w-0 flex">
+          <div class="flex-1 min-w-0">
+            <Breadcrumbs title={title} tag={tag} color={color} section={section} />
+            <div class="px-8 py-8 max-w-3xl content-fade-in">
+              <div class="prose">
+                <slot />
+              </div>
             </div>
+
+            <!-- Edit on GitHub -->
+            <div class="px-8 pb-4 max-w-3xl">
+              <a
+                href={`https://github.com/Stackbilt-dev/stackbilt-docs/edit/main/src/content/docs/${slug}.md`}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[10px] font-terminal text-sb-dim/40 hover:text-sb-amber transition-colors duration-75 tracking-wider"
+              >
+                EDIT ON GITHUB
+              </a>
+            </div>
+
+            <PrevNext currentOrder={order} />
           </div>
 
-          <!-- Edit on GitHub -->
-          <div class="px-8 pb-4 max-w-3xl">
-            <a
-              href={`https://github.com/Stackbilt-dev/stackbilt-docs/edit/main/src/content/docs/${slug}.md`}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-[10px] font-terminal text-sb-dim hover:text-sb-amber transition-colors duration-75 tracking-wider"
-            >
-              EDIT ON GITHUB
-            </a>
-          </div>
-
-          <PrevNext currentOrder={order} />
+          <TableOfContents headings={headings} />
         </div>
 
-        <TableOfContents headings={headings} />
+        <Footer />
       </main>
     </div>
 
-    <!-- Code copy button + search trigger script -->
+    <!-- Scripts -->
     <script>
       document.addEventListener('DOMContentLoaded', () => {
         // Code copy buttons
@@ -149,11 +254,13 @@ const { title, tag, color, order, slug, headings } = Astro.props;
           pre.appendChild(btn);
         });
 
-        // Search trigger button
-        const searchTrigger = document.getElementById('search-trigger');
-        if (searchTrigger && window.__searchOpen) {
-          searchTrigger.addEventListener('click', window.__searchOpen);
-        }
+        // Search triggers
+        ['search-trigger', 'search-trigger-mobile'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el && window.__searchOpen) {
+            el.addEventListener('click', window.__searchOpen);
+          }
+        });
       });
     </script>
   </body>
