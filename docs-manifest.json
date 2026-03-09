@@ -1,0 +1,92 @@
+{
+  "$schema": "Stackbilt docs sync manifest — maps product repos to doc site pages",
+  "version": 1,
+  "contentDir": "src/content/docs",
+  "org": "Stackbilt-dev",
+  "sources": {
+    "charter": {
+      "repo": "charter",
+      "pages": {
+        "getting-started.md": {
+          "source": "docs/getting-started.md",
+          "fallback": "README.md",
+          "section": "charter",
+          "order": 1,
+          "color": "#2ea043",
+          "tag": "01"
+        },
+        "cli-reference.md": {
+          "source": "docs/cli-reference.md",
+          "section": "charter",
+          "order": 2,
+          "color": "#f59e0b",
+          "tag": "02"
+        },
+        "ci-integration.md": {
+          "source": "docs/ci-integration.md",
+          "section": "charter",
+          "order": 3,
+          "color": "#f59e0b",
+          "tag": "03"
+        }
+      }
+    },
+    "edgestack": {
+      "repo": "edgestack-v2",
+      "pages": {
+        "platform.md": {
+          "source": "docs/platform.md",
+          "section": "platform",
+          "order": 4,
+          "color": "#f472b6",
+          "tag": "04"
+        },
+        "mcp.md": {
+          "source": "docs/mcp.md",
+          "section": "platform",
+          "order": 5,
+          "color": "#22d3ee",
+          "tag": "05"
+        },
+        "api-reference.md": {
+          "source": "docs/api-reference.md",
+          "section": "platform",
+          "order": 7,
+          "color": "#c084fc",
+          "tag": "07"
+        },
+        "compass-governance-api.md": {
+          "source": "docs/compass-governance-api.md",
+          "section": "platform",
+          "order": 8,
+          "color": "#22d3ee",
+          "tag": "08"
+        }
+      }
+    },
+    "ecosystem": {
+      "repo": "edgestack-v2",
+      "pages": {
+        "ecosystem.md": {
+          "source": "docs/ecosystem.md",
+          "section": "ecosystem",
+          "order": 6,
+          "color": "#c084fc",
+          "tag": "06"
+        }
+      }
+    },
+    "img-forge": {
+      "repo": "img-forge",
+      "pages": {
+        "img-forge.md": {
+          "source": "docs/img-forge.md",
+          "section": "platform",
+          "order": 9,
+          "color": "#f472b6",
+          "tag": "09"
+        }
+      }
+    }
+  }
+}
