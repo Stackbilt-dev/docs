@@ -1,6 +1,6 @@
 ---
 title: "StackBilt Platform"
-description: "Overview of EdgeStack's architecture pipeline, plan tiers, authentication, and Compass governance integration on Cloudflare Workers."
+description: "Overview of Stackbilder's architecture pipeline, plan tiers, authentication, and Compass governance integration on Cloudflare Workers."
 section: "platform"
 order: 4
 color: "#f472b6"

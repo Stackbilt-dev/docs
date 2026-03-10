@@ -15,24 +15,10 @@
           "color": "#2ea043",
           "tag": "01"
         },
-        "cli-reference.md": {
-          "source": "docs/cli-reference.md",
-          "section": "charter",
-          "order": 2,
-          "color": "#f59e0b",
-          "tag": "02"
-        },
-        "ci-integration.md": {
-          "source": "docs/ci-integration.md",
-          "section": "charter",
-          "order": 3,
-          "color": "#f59e0b",
-          "tag": "03"
-        }
       }
     },
     "edgestack": {
-      "repo": "edgestack-v2",
+      "repo": "edgestack_v2",
       "pages": {
         "platform.md": {
           "source": "docs/platform.md",
@@ -65,7 +51,7 @@
       }
     },
     "ecosystem": {
-      "repo": "edgestack-v2",
+      "repo": "edgestack_v2",
       "pages": {
         "ecosystem.md": {
           "source": "docs/ecosystem.md",

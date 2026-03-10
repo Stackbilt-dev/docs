@@ -1,6 +1,6 @@
 ---
 title: "API Reference"
-description: "REST API reference for EdgeStack. Flow lifecycle, artifact retrieval, scaffold generation, and authentication endpoints."
+description: "REST API reference for Stackbilder. Flow lifecycle, artifact retrieval, scaffold generation, and authentication endpoints."
 section: "platform"
 order: 7
 color: "#c084fc"
@@ -9,7 +9,7 @@ tag: "07"
 
 # API Reference
 
-Complete reference for the StackBilt EdgeStack Architect API.
+Complete reference for the StackBilt Stackbilder Architect API.
 
 **Base URL:** `https://stackbilt.dev`
 

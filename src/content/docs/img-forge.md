@@ -1,6 +1,6 @@
 ---
 title: "img-forge API"
-description: "AI image generation API with REST endpoints, MCP tools, and multi-tier quality options. OAuth 2.1 and API key authentication."
+description: "AI image generation service — text-to-image with multiple quality tiers"
 section: "platform"
 order: 9
 color: "#f472b6"

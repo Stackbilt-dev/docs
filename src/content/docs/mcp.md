@@ -1,6 +1,6 @@
 ---
 title: "MCP Integration"
-description: "Connect AI agents to EdgeStack and Compass via Model Context Protocol. 22 tools for architecture generation, governance, and scaffold delivery."
+description: "Connect AI agents to Stackbilder and Compass via Model Context Protocol. 22 tools for architecture generation, governance, and scaffold delivery."
 section: "platform"
 order: 5
 color: "#22d3ee"

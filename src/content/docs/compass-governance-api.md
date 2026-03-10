@@ -11,7 +11,7 @@ tag: "08"
 
 Compass is the governance system behind StackBilt. This page documents the current Compass API surface and route taxonomy implemented in the `DigitalCSA` worker.
 
-Base URL (production): accessed via EdgeStack service binding (not a public subdomain)
+Base URL (production): accessed via Stackbilder service binding (not a public subdomain)
 
 ## What This Covers
 
