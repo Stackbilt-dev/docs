@@ -146,14 +146,9 @@ GENERATED=0
 CHANGES=()
 
 # Parse manifest and iterate sources
-python3 -c "
-import json
-m = json.load(open('$MANIFEST'))
-for src_name, src in m['sources'].items():
-    for page_key, page in src['pages'].items():
-        fallback = page.get('fallback', '')
-        print(f'{src_name}\t{src[\"repo\"]}\t{page_key}\t{page[\"source\"]}\t{fallback}')
-" | while IFS=$'\t' read -r src_name repo page_key source_path fallback_path; do
+# NOTE: process substitution (< <(...)) keeps the while loop in the current
+# shell so counter variables (SYNCED, SKIPPED, etc.) persist after the loop.
+while IFS=$'\t' read -r src_name repo page_key source_path fallback_path; do
 
   # Apply source filter if specified
   if [[ -n "$SOURCE_FILTER" && "$src_name" != "$SOURCE_FILTER" ]]; then
@@ -279,7 +274,14 @@ ${content}"
   fi
   SYNCED=$((SYNCED + 1))
 
-done
+done < <(python3 -c "
+import json
+m = json.load(open('$MANIFEST'))
+for src_name, src in m['sources'].items():
+    for page_key, page in src['pages'].items():
+        fallback = page.get('fallback', '')
+        print(f'{src_name}\t{src[\"repo\"]}\t{page_key}\t{page[\"source\"]}\t{fallback}')
+")
 
 log ""
 log "Sync complete: ${SYNCED} updated, ${SKIPPED} unchanged, ${FAILED} failed, ${GENERATED} generated"
