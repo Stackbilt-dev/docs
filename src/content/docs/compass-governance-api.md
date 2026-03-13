@@ -1,181 +1,108 @@
 ---
-title: "Compass Governance API"
-description: "Compass API surface and route taxonomy. MCP endpoints, governance ledger, blessed patterns, ADR management, and JWT authentication."
+title: "Compass Governance"
+description: "Compass internal governance service — RPC methods, service binding integration, and governance modes."
 section: "platform"
 order: 8
 color: "#22d3ee"
 tag: "08"
 ---
 
-# Compass Governance API
+# Compass Governance
 
-Compass is the governance system behind StackBilt. This page documents the current Compass API surface and route taxonomy implemented in the `DigitalCSA` worker.
+Compass is an internal governance service accessed via Cloudflare Service Binding from the Stackbilder flow pipeline. It is **not a public API** — there are no HTTP endpoints, no MCP server, and no admin surface.
 
-Base URL (production): accessed via Stackbilder service binding (not a public subdomain)
+## Architecture
 
-## What This Covers
+Compass is a lightweight RPC service (`compass` worker) bound to EdgeStack via `CSA_SERVICE` service binding. It provides governance guidance, quality assessment, and decision persistence for the 6-mode flow pipeline.
 
-- Compass MCP endpoints (`/mcp`, `/mcp/info`, legacy compatibility paths)
-- Canonical admin/domain route taxonomy
-- JWT + JWKS auth routes
-- Core governance APIs (ledger, patterns, requests, triage, validation, exhibits, agent ops)
+```
+EdgeStack (FlowDO)
+  │
+  ├── fetchGuidance(mode, tier) → constraints + quality thresholds
+  │
+  ├── mode execution (LLM)
+  │
+  ├── assessQuality(artifact) → score + pass/fail
+  │
+  └── persistDecisions(decisions) → ledger write (SPRINT mode only)
+```
 
-This page is a route map and integration reference, not a full schema-level endpoint spec.
+## RPC Methods
 
-## Authentication Model
+All calls go through `POST /rpc` with JSON-RPC payload. Requires `scope` object with `projectId`, `flowId`, `mode`, `tier`, `effectiveGovernanceMode`.
 
-Compass uses scoped API auth for most `/api/*` routes and enforces tenant/domain boundaries in the worker:
+### compass.fetchGuidance
 
-- ecosystem scope (`ecosystem_id`)
-- optional domain/project scope (`domain_id` / `project_id`)
-- payload scope enforcement on write requests (`POST` / `PATCH` / `PUT`)
+Returns governance context and quality thresholds for a flow mode. Called before each mode execution.
 
-### MCP Authentication (`/mcp`)
+```json
+{
+  "method": "compass.fetchGuidance",
+  "params": {
+    "scope": {
+      "projectId": "...",
+      "flowId": "...",
+      "mode": "ARCHITECT",
+      "tier": "pro",
+      "effectiveGovernanceMode": "ADVISORY"
+    }
+  }
+}
+```
 
-Compass MCP supports:
+### compass.assessQuality
 
-- JWT Bearer token (primary)
-- session-based follow-up requests via `mcp-session-id`
-- query-token compatibility mode (deprecated; can be warn/block mode)
+Scores a generated artifact against quality thresholds. Called after artifact generation.
 
-If no valid JWT and no session is present, Compass rejects the request.
+```json
+{
+  "method": "compass.assessQuality",
+  "params": {
+    "scope": { "..." },
+    "artifact": "...",
+    "mode": "ARCHITECT"
+  }
+}
+```
 
-### JWT / JWKS Routes
+### compass.persistDecisions
 
-| Endpoint | Method | Notes |
-|---|---|---|
-| `/api/.well-known/jwks.json` | `GET` | Public JWKS for JWT verification |
-| `/api/auth/token` | `POST` | Issue Compass JWT (requires valid API key) |
-| `/api/auth/revoke` | `POST` | Revoke JWTs (admin only) |
+Stores ADRs and architectural decisions in the governance ledger. Called at end of SPRINT mode only.
 
-## MCP Endpoints
+```json
+{
+  "method": "compass.persistDecisions",
+  "params": {
+    "scope": { "..." },
+    "decisions": [{ "..." }]
+  }
+}
+```
 
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/mcp/info` | `GET` | Public server info / capabilities summary |
-| `/mcp` | `GET` | SSE stream (session-capable) |
-| `/mcp` | `POST` | MCP JSON-RPC requests |
-| `/mcp` | `DELETE` | End MCP session |
-| `/mcp/*` | `GET/POST` | MCP path variants routed through the same handler |
-| `/mcp-client/*` | varies | Admin-only MCP client routes (feature flagged) |
+## Governance Modes by Plan
 
-## Canonical Route Taxonomy
+| Plan | Max Mode | Behavior |
+|------|----------|----------|
+| Free | `PASSIVE` | Log only — never blocks |
+| Pro | `ADVISORY` | Warn on issues, flow continues |
+| Enterprise | `ENFORCED` | Block on FAIL, require remediation |
 
-Compass uses a canonical route structure for admin, domain registry, and domain-scoped governance operations.
+## Integration
 
-### Admin Routes (`/api/admin/*`)
+EdgeStack creates a `CompassExchangeClient` per flow (cached, 5-min TTL). The client calls Compass via service binding with a 10-second timeout.
 
-Primary admin surfaces include:
+```toml
+# edgestack-v2/wrangler.toml
+[[services]]
+binding = "CSA_SERVICE"
+service = "compass"
+```
 
-- `/api/admin/keys`
-- `/api/admin/domains`
-- `/api/admin/repo-keys`
-- `/api/admin/repo-keys/:keyId/rotate`
-- `/api/admin/repo-keys/:keyId/revoke`
-- `/api/admin/repo-keys/:keyId/events`
-- `/api/admin/repos/:repoId/revoke-all-keys`
+## Future Direction
 
-These routes require admin auth and apply scope checks before writes.
-
-### Domain Registry Routes (`/api/domains`)
-
-Admin-manageable domain registry endpoints:
-
-- `GET/POST /api/domains`
-- `GET/PATCH /api/domains/:domainId`
-
-### Domain-Scoped Governance Routes (`/api/domains/:domainId/*`)
-
-These routes enforce domain ownership and payload scoping.
-
-| Endpoint Pattern | Methods | Purpose |
-|---|---|---|
-| `/api/domains/:domainId/ledger` | `GET`, `POST` | Ledger entries |
-| `/api/domains/:domainId/tickets` | `GET`, `POST` | Governance requests/tickets |
-| `/api/domains/:domainId/chat/threads` | `GET`, `POST` | Domain chat threads |
-| `/api/domains/:domainId/chat/threads/:id` | `GET`, `PATCH`, `DELETE` | Thread lifecycle |
-| `/api/domains/:domainId/chat/threads/:id/messages` | `POST` | Send message |
-| `/api/domains/:domainId/patterns` | `GET`, `POST` | Pattern catalog |
-| `/api/domains/:domainId/patterns/:id` | `GET`, `PATCH`, `DELETE` | Pattern management |
-| `/api/domains/:domainId/protocols` | `GET`, `POST` | Protocols |
-| `/api/domains/:domainId/protocols/:id` | `DELETE` | Protocol delete |
-
-## Core Governance APIs (Top-Level)
-
-Compass also exposes top-level scoped APIs (with `ecosystem_id` / `project_id` query support in many cases) for compatibility and operational workflows.
-
-### Ledger, Patterns, Requests
-
-- `/api/ledger`
-- `/api/ledger/:id`
-- `/api/ledger/temporal/valid-at`
-- `/api/ledger/temporal/approaching-review`
-- `/api/ledger/:id/temporal`
-- `/api/patterns`
-- `/api/patterns/:id`
-- `/api/requests`
-- `/api/requests/:id`
-- `/api/requests/:id/resolve`
-- `/api/requests/:id/notes`
-
-### Triage, Audit, Validation
-
-- `/api/triage/run`
-- `/api/triage/commit` (admin)
-- `/api/triage/history`
-- `/api/triage/entropy`
-- `/api/triage/detect`
-- `/api/triage/scope`
-- `/api/audit/report`
-- `/api/validate`
-- `/api/validate/history` (admin)
-- `/api/git/validate`
-- `/api/git/validations` (admin)
-
-### Submission + Chat
-
-- `/api/submit`
-- `/api/submit/my`
-- `/api/submit/status/:id`
-- `/api/chat/threads`
-- `/api/chat/threads/:id`
-- `/api/chat/threads/:id/messages`
-
-### Exhibits (Constitution / Policy Content)
-
-- `/api/exhibits`
-- `/api/exhibits/active/:projectId`
-- `/api/exhibits/:id`
-- `/api/exhibits/:id/sections`
-- `/api/exhibits/:exhibitId/sections/:sectionId`
-
-### Agent Operations (Admin)
-
-- `/api/agent/request-action`
-- `/api/agent/status/:actionId`
-- `/api/agent/approve/:actionId`
-- `/api/agent/audit/:actionId`
-- `/api/agent/kill-switch`
-- `/api/agent/actions`
-- `/api/agent/operations`
-- `/api/agent/cancel/:actionId`
-- `/api/agent/execute/:actionId`
-
-### Miscellaneous Operational Endpoints
-
-- `/api/heartbeat` (proactive governance health checks)
-- `/api/llm` (primary LLM route)
-- `/api/gemini` (deprecated compatibility route)
-
-## Integration Notes
-
-- Prefer the canonical domain-scoped routes (`/api/domains/:domainId/*`) for new integrations.
-- Use JWT auth for MCP clients and reuse the session header for follow-up requests.
-- Treat query-token MCP auth as deprecated and migrate to header-based auth.
-- For public key verification across services, use Compass JWKS (`/api/.well-known/jwks.json`).
+Compass governance logic is being consolidated into the Stackbilder Engine (`stackbilt-engine`), which already handles blessed pattern enforcement, compatibility scoring, and tier gating deterministically. See [edgestack#32](https://github.com/Stackbilt-dev/edgestack_v2/issues/32) for the migration plan.
 
 ## Related Docs
 
 - [Ecosystem](/ecosystem)
-- [MCP Integration](/mcp) (StackBilt MCP server)
-- [API Reference](/api-reference) (StackBilt platform API)
+- [Platform](/platform) (Stackbilder flow pipeline)
