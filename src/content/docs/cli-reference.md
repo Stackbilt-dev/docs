@@ -2,9 +2,9 @@
 title: "CLI Reference"
 description: "Complete command reference for Charter CLI. Every command, flag, and option for governance validation, drift detection, and ADF context compilation."
 section: "charter"
-order: 2
+order: 3
 color: "#f59e0b"
-tag: "02"
+tag: "03"
 ---
 
 # CLI Reference
@@ -303,6 +303,68 @@ npx charter adf metrics recalibrate --auto-rationale --format json     # machine
 ```
 
 One of `--reason` or `--auto-rationale` is required.
+
+## Engine Commands
+
+These commands connect to the Stackbilder Engine — a deterministic tech stack builder with a 52-primitive catalog, 5x5 compatibility matrix, and scaffold generation. Zero LLM calls.
+
+### charter login
+
+Manages API key credentials for authenticated engine access.
+
+```bash
+npx charter login --key sb_live_xxx        # store API key
+npx charter login --key sb_test_xxx        # store test mode key
+npx charter login                          # show current login status
+npx charter login --logout                 # clear stored credentials
+npx charter login --key sb_live_xxx --url https://custom-engine.example.com
+```
+
+Credentials are stored at `~/.charter/credentials.json` (mode 0600). API keys must start with `sb_live_` or `sb_test_`.
+
+### charter architect
+
+Generates a tech stack from a natural language project description. Calls the Stackbilder Engine's `/build` endpoint, displays the selected stack with compatibility scores, and caches the result for `charter scaffold`.
+
+```bash
+npx charter architect "A real-time chat app on Cloudflare"
+npx charter architect "API backend for a SaaS product" --cloudflare-only
+npx charter architect --file requirements.md
+npx charter architect "Dashboard" --framework Hono --database D1
+npx charter architect "Landing page" --dry-run
+npx charter architect "Serverless API" --format json
+npx charter architect "Collaboration tool" --seed 42
+```
+
+**Output includes:**
+- Stack picks (position, tech name, element, orientation, CF-native flag)
+- Compatibility score (normalized 0–1) with pairwise breakdown
+- Tensions (antagonistic element pairs)
+- Scaffold file manifest
+- Deterministic seed + receipt hash
+
+**Constraint flags:**
+- `--cloudflare-only` — restrict to Cloudflare-native primitives
+- `--framework <name>` — pin a specific framework (e.g., Hono, Astro, Next.js)
+- `--database <name>` — pin a specific database (e.g., D1, Neon, Turso)
+- `--file <path>` — read description from a file
+- `--seed <number>` — deterministic seed (same seed = same stack)
+- `--dry-run` — display results without caching
+
+**Tier behavior:** Free tier (unauthenticated or free API key) draws from the blessed catalog only. Pro/enterprise API keys unlock the full 52-primitive catalog.
+
+### charter scaffold
+
+Writes scaffold files from the last `charter architect` build to disk.
+
+```bash
+npx charter scaffold                         # write to current directory
+npx charter scaffold --output ./my-project   # write to specific directory
+npx charter scaffold --dry-run               # preview without writing
+npx charter scaffold --format json           # machine-readable manifest
+```
+
+Reads the cached build from `.charter/last-build.json`. Run `charter architect` first to populate the cache.
 
 ## Global Flags
 

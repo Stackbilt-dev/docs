@@ -2,9 +2,9 @@
 title: "Charter Kit"
 description: "AI-first developer framework for governance and project scaffolding"
 section: "charter"
-order: 1
+order: 2
 color: "#2ea043"
-tag: "01"
+tag: "02"
 ---
 
 # Charter Kit

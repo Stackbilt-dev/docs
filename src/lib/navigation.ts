@@ -17,9 +17,9 @@ export interface NavSection {
 }
 
 export const SECTION_META: Record<string, { label: string; color: string; order: number }> = {
-  charter: { label: 'Charter CLI', color: '#2ea043', order: 1 },
-  platform: { label: 'Platform', color: '#f472b6', order: 2 },
-  ecosystem: { label: 'Ecosystem', color: '#c084fc', order: 3 },
+  ecosystem: { label: 'Ecosystem', color: '#c084fc', order: 1 },
+  charter: { label: 'Charter CLI', color: '#2ea043', order: 2 },
+  platform: { label: 'Platform', color: '#f472b6', order: 3 },
 };
 
 export async function getNavigation(): Promise<{
