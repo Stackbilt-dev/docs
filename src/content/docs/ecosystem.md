@@ -163,7 +163,7 @@ For automated pipelines, each service has its own token:
 
 ```json
 {
-  "stackbilder": { "url": "https://stackbilt.dev/mcp", "token": "STACKBILDER_MCP_TOKEN" },
+  "edgestack": { "url": "https://stackbilt.dev/mcp", "token": "EDGESTACK_MCP_TOKEN" },
   "compass": { "url": "https://stackbilt.dev/mcp", "transport": "service_binding", "token": "CSA_MCP_TOKEN" },
   "imgforge": { "url": "https://imgforge.stackbilt.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" }
 }
