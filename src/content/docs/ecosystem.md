@@ -9,29 +9,26 @@ tag: "01"
 
 # Ecosystem
 
-Stackbilt is a unified developer platform with four complementary systems spanning the full development lifecycle — from stack selection to governed deployment.
+StackBilt is three complementary tools that enforce governance across the full development lifecycle.
 
-## The Four Pieces
+## The Three Pieces
 
 | Tool | License | Role |
 |------|---------|------|
-| **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime, ADF context compiler, CLI gateway to the engine |
-| **Stackbilder Engine** | Commercial | Deterministic tech stack builder — 52-primitive catalog, compatibility scoring, scaffold generation. Zero LLM. |
-| **Stackbilder Platform** | Commercial | AI-powered architecture generation, 6-mode flow pipeline, structured artifacts |
+| **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
+| **Stackbilder** | Commercial | Architecture generation, scaffold engine, structured artifacts |
 | **Compass** | Commercial | Governance policy brain, institutional memory, ADR ledger |
 
-Charter is the open-source CLI. The engine, platform, and Compass are commercial services.
+Charter is the open-source foundation. Stackbilder and Compass are commercial services.
 
 ## Service Map
 
-| Service | URL / Worker | Purpose |
+| Service | URL | Purpose |
 |---------|-----|---------|
-| **Stackbilt Platform** | `stackbilt.dev` | Architecture generation, MCP server, flow pipeline |
-| **Stackbilt Engine** | `stackbilt-engine` | Deterministic stack builder (52-card tech deck, compatibility matrix, scaffold templates) |
-| **Compass** | via service binding | Governance enforcement, blessed patterns, ADR ledger |
-| **Auth** | `auth.stackbilt.dev` | Centralized auth — API keys, JWT, SSO, Stripe billing, PAYG credit packs |
-| **img-forge** | `imgforge.stackbilt.dev` | AI image generation API (multi-model, MCP + OAuth 2.1) |
-| **AEGIS** | `aegis.stackbilt.dev` | Persistent cognitive agent — memory, goals, task pipeline, dreaming cycle |
+| **StackBilt** | `stackbilt.dev` | Architecture generation, MCP server, scaffold engine |
+| **Compass** | via Stackbilder service binding | Governance enforcement, blessed patterns, ADR ledger |
+| **Auth Worker** | `auth-tenant-v2` | Authentication service (Better Auth + D1, OAuth, SSO) |
+| **img-forge** | `imgforge.stackbilt.dev` | AI image generation for documentation |
 
 ## How They Fit Together
 
@@ -39,23 +36,19 @@ Charter is the open-source CLI. The engine, platform, and Compass are commercial
 IDEA
   │
   ▼
-Engine: build(description) → deterministic stack selection (zero LLM)
-  │  52-primitive catalog, compatibility scoring, scaffold template
-  │
-  ▼
 Compass: governance("Can we build X?")
   │
   ├── REJECTED ──► Stop
   │
   ▼ APPROVED
-Platform: runFullFlowAsync(idea + engine stack)
+Stackbilder: runFullFlowAsync(idea)
   → PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT
   │
   ▼
 Compass: red_team(architecture) → security review
   │
   ▼
-Platform: getFlowScaffold(flowId) → deployable project
+Stackbilder: getFlowScaffold(flowId) → deployable project
   │
   ▼
 Charter: validate + drift → commit and stack compliance
@@ -79,7 +72,6 @@ npx charter adf init    # scaffold .ai/ context directory
 
 **Governance commands:** `validate`, `drift`, `audit`, `classify`, `hook install`.
 **ADF commands:** `adf init`, `adf fmt`, `adf patch`, `adf bundle`, `adf sync`, `adf evidence`.
-**Engine commands:** `login`, `architect`, `scaffold` — generate and write tech stacks via the Stackbilder Engine.
 
 For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/stackbilt-dev/charter-kit/blob/main/papers/context-as-code-v1.1.md).
 <!-- DOCSYNC:END:charter-oss-ecosystem -->
@@ -171,7 +163,7 @@ For automated pipelines, each service has its own token:
 
 ```json
 {
-  "stackbilder": { "url": "https://stackbilt.dev/mcp", "token": "STACKBILDER_MCP_TOKEN" },
+  "edgestack": { "url": "https://stackbilt.dev/mcp", "token": "EDGESTACK_MCP_TOKEN" },
   "compass": { "url": "https://stackbilt.dev/mcp", "transport": "service_binding", "token": "CSA_MCP_TOKEN" },
   "imgforge": { "url": "https://imgforge.stackbilt.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" }
 }
