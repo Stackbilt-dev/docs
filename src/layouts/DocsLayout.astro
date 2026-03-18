@@ -38,6 +38,10 @@ const pageTitle = `${title} — Docs by Stackbilt`;
     <title>{pageTitle}</title>
     <meta name="description" content={metaDescription} />
 
+    <!-- GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T3MSE40BWF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T3MSE40BWF');</script>
+
     <!-- Open Graph -->
     <meta property="og:title" content={title} />
     <meta property="og:description" content={metaDescription} />
