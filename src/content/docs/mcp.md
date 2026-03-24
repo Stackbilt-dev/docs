@@ -1,6 +1,6 @@
 ---
 title: "MCP Integration"
-description: "Connect AI agents to Stackbilder and Compass via Model Context Protocol. 22 tools for architecture generation, governance, and scaffold delivery."
+description: "Connect AI agents to StackBilt and Compass via Model Context Protocol. 22 native tools plus up to 47 Compass governance tools proxied through a unified MCP server."
 section: "platform"
 order: 5
 color: "#22d3ee"
@@ -9,7 +9,9 @@ tag: "05"
 
 # MCP Integration
 
-StackBilt exposes its 6-mode architecture workflow as an MCP-compliant remote server. Connect MCP-compatible agents (Claude Code, Claude Desktop, custom agents) to run architecture flows programmatically.
+StackBilt exposes its 6-mode architecture workflow as an MCP-compliant remote server. Connect MCP-compatible agents (Claude Code, Claude Desktop, custom agents) to run architecture flows programmatically. The server provides 22 native tools for flow and artifact management, and proxies up to 47 additional Compass governance tools — tier-gated based on your plan.
+
+> **Note:** Compass governance tool proxying is implemented but pending activation. The 22 native tools are fully operational. See [Compass Governance](/compass-governance-api) for integration status.
 
 **Production endpoint:** `https://stackbilt.dev/mcp`
 
@@ -115,7 +117,7 @@ const result = await client.callTool("runFullFlowAsync", {
 });
 ```
 
-## All 22 Tools
+## Native Tools (22)
 
 ### Flow Execution
 
@@ -158,6 +160,67 @@ const result = await client.callTool("runFullFlowAsync", {
 | `invalidateCache` | Clear cached mode artifacts so next run regenerates. |
 | `getGovernanceStatus` | Governance validation results, blessed patterns, persisted ADR IDs. |
 | `submitFeedback` | Submit bug reports, feature requests, and flow quality feedback. Params: `message` (string, required), `type` (enum: bug/feature/general/flow-quality), `rating` (number 1-5, optional), `flowId` (string, optional), `mode` (string, optional). |
+
+## Compass Governance Tools (up to 47)
+
+The StackBilt MCP server proxies Compass governance tools through the same endpoint. When an agent calls `tools/list`, the response merges the 22 native tools above with whichever Compass tools the user's plan unlocks. Tool calls to Compass names are forwarded via a service binding -- no separate Compass connection required.
+
+### Tier Gating
+
+| Tier | Compass Tools | Access Level |
+|------|---------------|--------------|
+| **Free** | 24 tools | Read-only governance: browse ledger entries, patterns, protocols, projects, experiments, and temporal analyses. Submit requests and get advisory briefings. |
+| **Pro / Enterprise** | All 47 tools (24 free + 23 pro-only) | Full governance: create and mutate ledger entries, patterns, protocols, and projects. Run LLM-powered governance, strategy, red-teaming, architecture validation, temporal analysis, change classification, experiment lifecycle, artifact quality evaluation, and codebase compliance scanning. |
+
+### Free-Tier Tools (24)
+
+| Category | Tools |
+|----------|-------|
+| Context | `set_context`, `get_context`, `get_history`, `clear_session` |
+| Ledger (read-only) | `list_ledger_entries`, `get_ledger_entry`, `get_ledger_audit_stats` |
+| Patterns (read-only) | `list_patterns`, `get_patterns_for_architecture` |
+| Requests | `list_requests`, `submit_request`, `detect_resolved` |
+| Protocols (read-only) | `list_protocols` |
+| Projects (read-only) | `list_projects` |
+| Decision Learning (read-only) | `find_precedents`, `get_decision_review` |
+| Temporal (read-only) | `list_temporal_analyses`, `get_temporal_analysis` |
+| Change Control (read-only) | `list_change_classifications` |
+| Experiments (read-only) | `list_experiments`, `get_experiment` |
+| Notary (read-only) | `get_project_snapshot` |
+| Flow Context (read-only) | `get_flow_context` |
+| Advisory | `brief` |
+
+### Pro-Only Tools (23)
+
+| Category | Tools |
+|----------|-------|
+| Advisory (LLM-powered) | `governance`, `strategy`, `drafter`, `red_team` |
+| Ledger (mutations) | `create_ledger_entry`, `update_ledger_entry` |
+| Patterns (mutations) | `create_pattern` |
+| Requests (mutations) | `resolve_request` |
+| Protocols (mutations) | `create_protocol` |
+| Projects (mutations) | `create_project` |
+| Architect Integration | `validate_architecture`, `persist_architecture_adr`, `set_integration_mode` |
+| Temporal Analysis (LLM) | `temporal_analysis` |
+| Change Control (LLM) | `classify_change` |
+| Experiments (mutations) | `propose_experiment`, `update_experiment`, `review_experiment` |
+| Decision Learning (mutations) | `track_outcome` |
+| Quality (LLM) | `evaluate_artifact_quality` |
+| Artifact Assessment (LLM) | `assess_artifact` |
+| Batch Persistence | `batch_persist_records` |
+| Compliance | `scan_codebase_compliance` |
+
+### How Proxying Works
+
+The proxy uses the Compass service binding (`CSA_MCP_URL`) to forward tool calls. Authentication is resolved automatically:
+
+> Access-key users: the server exchanges the `ska_` key for a Compass JWT via the Token Broker, caches it, and attaches it to proxied requests.
+
+> Admin/static-token users: the server uses the `CSA_MCP_TOKEN` environment variable directly (exchanging for a JWT if needed).
+
+> JWT users: the existing Compass JWT is used as-is.
+
+Tool calls that target a name not in the 22 native tools are routed to Compass if the user's tier permits. If the tool is not allowed for the tier, the server returns a standard `-32602` (invalid params) error.
 
 ## Recommended Agent Workflow
 

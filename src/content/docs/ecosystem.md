@@ -28,9 +28,10 @@ Charter is the open-source CLI. The engine, platform, and Compass are commercial
 |---------|-----|---------|
 | **Stackbilt Platform** | `stackbilt.dev` | Architecture generation, MCP server, flow pipeline |
 | **Stackbilt Engine** | `stackbilt-engine` | Deterministic stack builder (52-card tech deck, compatibility matrix, scaffold templates) |
-| **Compass** | via service binding | Governance enforcement, blessed patterns, ADR ledger |
+| **Compass** | `compass.stackbilt.dev/mcp` | Governance enforcement, blessed patterns, ADR ledger *(standalone MCP server live; EdgeStack integration pending activation)* |
 | **Auth** | `auth.stackbilt.dev` | Centralized auth — API keys, JWT, SSO, Stripe billing, PAYG credit packs |
 | **img-forge** | `imgforge.stackbilt.dev` | AI image generation API (multi-model, MCP + OAuth 2.1) |
+| **MCP Gateway** | `mcp.stackbilt.dev/mcp` | Unified OAuth-authenticated MCP endpoint — routes tool calls to TarotScript, img-forge, and Stackbilder backends with scaffold pipeline tools |
 | **AEGIS** | `aegis.stackbilt.dev` | Persistent cognitive agent — memory, goals, task pipeline, dreaming cycle |
 
 ## How They Fit Together
@@ -81,7 +82,7 @@ npx charter adf init    # scaffold .ai/ context directory
 **ADF commands:** `adf init`, `adf fmt`, `adf patch`, `adf bundle`, `adf sync`, `adf evidence`.
 **Engine commands:** `login`, `architect`, `scaffold` — generate and write tech stacks via the Stackbilder Engine.
 
-For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/stackbilt-dev/charter-kit/blob/main/papers/context-as-code-v1.1.md).
+For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/Stackbilt-dev/charter/blob/main/papers/context-as-code-v1.1.md).
 <!-- DOCSYNC:END:charter-oss-ecosystem -->
 
 ## Stackbilder: Architecture + Scaffold
@@ -90,7 +91,7 @@ The 6-mode pipeline (PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT) p
 
 Available via:
 - **Browser UI** at [stackbilt.dev](https://stackbilt.dev) (interactive)
-- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 22 tools)
+- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 22 native tools + up to 54 Compass governance tools, tier-gated)
 - **REST API** at `stackbilt.dev/api/flow/*` (direct HTTP)
 
 ### Lightweight Agent Pattern
@@ -132,11 +133,33 @@ Communication between Stackbilder and Compass supports multiple transports:
 
 | Transport | Description |
 |-----------|-------------|
-| `external_http` | Public HTTPS MCP endpoint (default) |
+| `external_http` | Public HTTPS MCP endpoint |
 | `service_binding` | Internal Worker binding (when configured) |
-| `auto` | Canary split between HTTP and binding |
+| `auto` | Canary split between HTTP and binding based on `CSA_CANARY_PERCENT` |
 
-Canary rollout percentage is configurable per-flow or via environment default.
+**Current production state:** `CSA_TRANSPORT = "auto"` with `CSA_CANARY_PERCENT = "100"`. Because the `CSA_SERVICE` binding is configured in production, 100% of requests route to the internal service binding first. If the binding fails, the client automatically falls back to `external_http`. Canary percentage is configurable per-flow or via environment default.
+
+## MCP Gateway
+
+The MCP Gateway (`mcp.stackbilt.dev/mcp`) is a unified OAuth-authenticated entry point for agent clients. A single connection routes tool calls to multiple backend product workers via Cloudflare Service Bindings.
+
+| Backend | Tool Prefix | Tools |
+|---------|-------------|-------|
+| **TarotScript** | `scaffold_*` | `scaffold_create`, `scaffold_classify`, `scaffold_publish`, `scaffold_deploy`, `scaffold_import`, `scaffold_status` |
+| **img-forge** | `image_*` | `image_generate`, `image_list_models`, `image_check_job` |
+| **Stackbilder** | `flow_*` | `flow_create`, `flow_status`, `flow_summary`, `flow_quality`, `flow_governance`, `flow_advance`, `flow_recover` |
+
+Authentication is OAuth 2.1 with PKCE (GitHub SSO, Google SSO, or email/password). Every tool declares a risk level (`READ_ONLY`, `LOCAL_MUTATION`, `EXTERNAL_MUTATION`) per the Security Constitution. Structured audit logging with secret redaction ships to a Cloudflare Queue.
+
+### Scaffold Pipeline (E2E)
+
+The TarotScript scaffold pipeline is the primary creation path — zero LLM for file generation, ~20ms for structure, ~2s with oracle prose:
+
+```
+scaffold_create → structured facts + deployable project files
+  → scaffold_publish → GitHub repo with atomic initial commit
+  → git clone → npm install → npx wrangler deploy → live Worker
+```
 
 ## Governance-First Development
 
@@ -173,6 +196,7 @@ For automated pipelines, each service has its own token:
 {
   "stackbilder": { "url": "https://stackbilt.dev/mcp", "token": "STACKBILDER_MCP_TOKEN" },
   "compass": { "url": "https://stackbilt.dev/mcp", "transport": "service_binding", "token": "CSA_MCP_TOKEN" },
-  "imgforge": { "url": "https://imgforge.stackbilt.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" }
+  "imgforge": { "url": "https://imgforge.stackbilt.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" },
+  "gateway": { "url": "https://mcp.stackbilt.dev/mcp", "note": "Unified OAuth endpoint — routes to all backends above" }
 }
 ```

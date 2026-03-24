@@ -349,6 +349,258 @@ The MCP server exposes 22 tools for AI agent integration (flow execution/inspect
 | `/mcp/sse` | GET | Legacy SSE transport |
 | `/mcp/info` | GET | Server capabilities (no auth) |
 
+## Engine API (Deterministic)
+
+The StackBilt Engine is a standalone Cloudflare Worker that provides deterministic (zero-LLM) stack selection, scoring, scaffolding, and governance. All responses are computed from a static catalog of technology primitives and rule-based compatibility analysis -- no AI inference calls.
+
+**Base URL:** `https://engine.stackbilt.dev`
+
+**Auth:** Most endpoints are public. Endpoints that return the full `approved` tier catalog require a valid API key via `Authorization: Bearer <key>`. Without auth, results are filtered to the `blessed` tier.
+
+### GET /health
+
+Returns service status, version, catalog size, and the list of available endpoints.
+
+```json
+{
+  "status": "ok",
+  "version": "0.3.0",
+  "engine": "tarotscript-deck",
+  "catalog": 42,
+  "endpoints": ["/build", "/build/variants", "/scaffold", "/score", "/guidance", "/assess", "/catalog", "/health"]
+}
+```
+
+### GET /catalog
+
+Returns the technology primitives catalog. Supports optional query filters.
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `category` | string | Filter by category: `Compute`, `Storage`, `Interface`, `Fabric` |
+| `tier` | string | Filter by tier: `blessed` or `approved` |
+
+```json
+{
+  "primitives": [
+    {
+      "id": 1,
+      "name": "Workers",
+      "category": "Compute",
+      "element": "Edge",
+      "maturity": "stable",
+      "tier": "blessed",
+      "traits": ["serverless", "v8-isolate"],
+      "keywords": { "upright": ["fast", "scalable"], "reversed": ["cold-start", "limited-runtime"] },
+      "cloudflareNative": true
+    }
+  ],
+  "total": 42
+}
+```
+
+### POST /build
+
+Generates a deterministic technology stack from a natural-language project description. Parses requirements, selects primitives via spread positions, analyzes compatibility, and produces scaffold files.
+
+**Request:**
+```json
+{
+  "description": "A REST API for managing invoices with Stripe webhooks",
+  "constraints": { "needsAuth": true, "needsDatabase": true },
+  "tier": "blessed",
+  "seed": 12345,
+  "skip_auth": false,
+  "skip_frontend": true,
+  "skip_queue": false,
+  "skip_cache": false,
+  "pattern": "rest-api",
+  "routes": ["/invoices", "/webhooks/stripe"],
+  "integrations": ["stripe-webhook"],
+  "project_name": "invoice-api"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `description` | string | yes | Natural-language project description |
+| `constraints` | object | no | Explicit requirement flags (`needsAuth`, `needsDatabase`, `needsCache`, `needsQueue`, `needsStorage`, `needsCron`, `needsRealtime`, `cloudflareOnly`, `framework`, `database`) |
+| `tier` | string | no | `blessed` (default) or `all` |
+| `seed` | number | no | Deterministic seed; defaults to hash of description |
+| `skip_auth` | boolean | no | Omit auth position from spread |
+| `skip_frontend` | boolean | no | Omit framework position from spread |
+| `skip_queue` | boolean | no | Omit queue position from spread |
+| `skip_cache` | boolean | no | Omit cache position from spread |
+| `pattern` | string | no | Integration pattern override (`rest-api`, `discord-bot`, `stripe-webhook`, `github-webhook`, `mcp-server`, `queue-consumer`, `cron-worker`) |
+| `routes` | string[] | no | Explicit route list |
+| `integrations` | string[] | no | Explicit integration list |
+| `project_name` | string | no | Override derived project name |
+
+Skip flags are also auto-detected from the description via NLP (e.g., "backend only" sets `skip_frontend`).
+
+**Response:** Returns a `StackResult` with the selected primitives, compatibility analysis, scaffold files, seed, and receipt hash.
+
+### POST /build/variants
+
+Generates multiple stack variants for the same description, each with a different seed. Returns all variants plus a comparison with a recommendation.
+
+**Request:**
+```json
+{
+  "description": "A queue-driven image processing pipeline",
+  "count": 3,
+  "tier": "blessed"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `description` | string | yes | Natural-language project description |
+| `count` | number | yes | Number of variants (2-10) |
+| `constraints` | object | no | Same constraint flags as `/build` |
+| `tier` | string | no | `blessed` (default) or `all` |
+| `skip_*` | boolean | no | Same skip flags as `/build` |
+
+**Response:**
+```json
+{
+  "variants": [ "...StackResult[]" ],
+  "comparison": {
+    "bestIndex": 1,
+    "averageScore": 0.82,
+    "scoreRange": [0.75, 0.91],
+    "recommendation": {
+      "variantIndex": 1,
+      "reason": "Variant 1 scores 0.91 with zero tensions"
+    }
+  }
+}
+```
+
+### POST /scaffold
+
+Same request body as `/build`. Returns the stack with scaffold files in a `files[]` array format suitable for the MCP gateway, plus metadata about the generated project.
+
+**Response:**
+```json
+{
+  "files": [
+    { "path": "wrangler.toml", "content": "..." },
+    { "path": "package.json", "content": "..." },
+    { "path": "src/index.ts", "content": "..." }
+  ],
+  "stack": [
+    { "name": "Workers", "position": "runtime", "category": "Compute", "element": "Edge", "orientation": "upright", "traits": ["serverless"] }
+  ],
+  "compatibility_score": 0.85,
+  "seed": 12345,
+  "receipt": "sha256:...",
+  "project_name": "invoice-api",
+  "pattern": "rest-api",
+  "routes": ["/invoices"],
+  "integrations": ["stripe-webhook"]
+}
+```
+
+### POST /score
+
+Score an existing technology stack for compatibility. Provide position-name pairs; the engine resolves them against the catalog, runs compatibility analysis, and suggests swaps for any tensions.
+
+**Request:**
+```json
+{
+  "stack": [
+    { "position": "runtime", "name": "Workers" },
+    { "position": "database", "name": "D1" },
+    { "position": "cache", "name": "KV" }
+  ],
+  "complexity": "standard"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `stack` | array | yes | Array of `{ position, name }` pairs |
+| `complexity` | string | yes | `simple`, `standard`, or `complex` |
+
+**Response:** Returns the resolved stack, compatibility pairs with scores, and swap suggestions where tensions exist.
+
+```json
+{
+  "stack": [ "...DrawnTech[]" ],
+  "compatibility": {
+    "pairs": [ { "positions": ["runtime", "database"], "techs": ["Workers", "D1"], "relationship": "SYMP", "score": 2, "description": "..." } ],
+    "totalScore": 6,
+    "normalizedScore": 0.85,
+    "dominant": "Edge",
+    "tensions": []
+  },
+  "suggestions": []
+}
+```
+
+### POST /guidance
+
+Fetch governance guidance for a flow mode. Returns context hints, constraint overrides, and quality thresholds based on blessed architectural patterns.
+
+**Request:**
+```json
+{
+  "mode": "ARCHITECT",
+  "tier": "blessed",
+  "governanceMode": "ADVISORY"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `mode` | string | yes | Flow mode (e.g., `ARCHITECT`, `SPRINT`, `RISK`) |
+| `tier` | string | no | `blessed` (default) or `all` |
+| `governanceMode` | string | no | `PASSIVE`, `ADVISORY` (default), or `ENFORCED` |
+
+**Response:**
+```json
+{
+  "contextHints": ["Use Hono or plain fetch handler for routing", "..."],
+  "constraintOverrides": {},
+  "qualityThresholds": { "structure_completeness": 70, "blueprint_schema_validity": 80, "content_substance": 60 },
+  "guidanceVersion": "1.0.0"
+}
+```
+
+### POST /assess
+
+Assess the quality of a flow artifact against governance thresholds. Returns a score, per-dimension breakdown, and actionable feedback.
+
+**Request:**
+```json
+{
+  "mode": "ARCHITECT",
+  "tier": "blessed",
+  "governanceMode": "ENFORCED",
+  "artifact": {
+    "content": "...artifact content string..."
+  }
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `mode` | string | yes | Flow mode being assessed |
+| `tier` | string | no | `blessed` (default) or `all` |
+| `governanceMode` | string | no | `PASSIVE`, `ADVISORY` (default), or `ENFORCED` |
+| `artifact` | object | yes | Object with a `content` string field |
+
+**Response:**
+```json
+{
+  "score": 78,
+  "dimensions": { "structure_completeness": 80, "blueprint_schema_validity": 75, "content_substance": 72 },
+  "feedback": ["Consider adding error handling patterns", "Missing rate limiting strategy"],
+  "assessmentId": "assess_abc123"
+}
+```
+
 ## Error Responses
 
 | HTTP Status | Meaning |
