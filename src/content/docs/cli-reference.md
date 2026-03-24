@@ -304,67 +304,60 @@ npx charter adf metrics recalibrate --auto-rationale --format json     # machine
 
 One of `--reason` or `--auto-rationale` is required.
 
-## Engine Commands
+### charter adf tidy
 
-These commands connect to the Stackbilder Engine — a deterministic tech stack builder with a 52-primitive catalog, 5x5 compatibility matrix, and scaffold generation. Zero LLM calls.
-
-### charter login
-
-Manages API key credentials for authenticated engine access.
+Scans vendor config files (`CLAUDE.md`, `.cursorrules`, `agents.md`, `GEMINI.md`, `copilot-instructions.md`) for content added beyond the thin pointer, classifies and routes it to the appropriate ADF modules, and restores the thin pointer.
 
 ```bash
-npx charter login --key sb_live_xxx        # store API key
-npx charter login --key sb_test_xxx        # store test mode key
-npx charter login                          # show current login status
-npx charter login --logout                 # clear stored credentials
-npx charter login --key sb_live_xxx --url https://custom-engine.example.com
+npx charter adf tidy --dry-run                # preview what would be tidied
+npx charter adf tidy                          # tidy all vendor files
+npx charter adf tidy --source CLAUDE.md       # tidy a single file
+npx charter adf tidy --dry-run --ci           # CI: exit 1 if bloat found
+npx charter adf tidy --verbose                # show per-item routing trace
 ```
 
-Credentials are stored at `~/.charter/credentials.json` (mode 0600). API keys must start with `sb_live_` or `sb_test_`.
+- `--dry-run` — preview changes without writing files
+- `--source <file>` — tidy a specific vendor file instead of scanning all
+- `--ci` — exit 1 if bloat is found (with `--dry-run`, for pre-commit gating)
+- `--verbose` — show per-item routing trace with candidate scores
+- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
 
-### charter architect
+JSON output includes per-file status, item routing breakdown, module size warnings, and (when verbose) per-item routing traces with candidate scores.
 
-Generates a tech stack from a natural language project description. Calls the Stackbilder Engine's `/build` endpoint, displays the selected stack with compatibility scores, and caches the result for `charter scaffold`.
+### charter adf populate
+
+Auto-fills ADF context files from codebase signals: `package.json`, `README.md`, and stack detection. Replaces scaffold placeholder content with project-specific context. Skips sections that have already been customized.
 
 ```bash
-npx charter architect "A real-time chat app on Cloudflare"
-npx charter architect "API backend for a SaaS product" --cloudflare-only
-npx charter architect --file requirements.md
-npx charter architect "Dashboard" --framework Hono --database D1
-npx charter architect "Landing page" --dry-run
-npx charter architect "Serverless API" --format json
-npx charter architect "Collaboration tool" --seed 42
+npx charter adf populate                     # populate from codebase signals
+npx charter adf populate --dry-run           # preview without writing
+npx charter adf populate --force             # overwrite customized sections
+npx charter adf populate --format json       # machine-readable output
 ```
 
-**Output includes:**
-- Stack picks (position, tech name, element, orientation, CF-native flag)
-- Compatibility score (normalized 0–1) with pairwise breakdown
-- Tensions (antagonistic element pairs)
-- Scaffold file manifest
-- Deterministic seed + receipt hash
+- `--dry-run` — preview changes without writing files
+- `--force` — overwrite sections that have already been customized
+- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
 
-**Constraint flags:**
-- `--cloudflare-only` — restrict to Cloudflare-native primitives
-- `--framework <name>` — pin a specific framework (e.g., Hono, Astro, Next.js)
-- `--database <name>` — pin a specific database (e.g., D1, Neon, Turso)
-- `--file <path>` — read description from a file
-- `--seed <number>` — deterministic seed (same seed = same stack)
-- `--dry-run` — display results without caching
+Populates `CONTEXT` in `core.adf`, `backend.adf`, and `frontend.adf`, plus `STATE` in `state.adf`. Adds stack-specific constraints (ESM imports, Cloudflare Workers APIs, pnpm workspace protocol) when detected.
 
-**Tier behavior:** Free tier (unauthenticated or free API key) draws from the blessed catalog only. Pro/enterprise API keys unlock the full 52-primitive catalog.
+### charter adf context
 
-### charter scaffold
-
-Writes scaffold files from the last `charter architect` build to disk.
+Resolves ADF modules based on file paths and/or explicit keywords. Maps file system structure to domain keywords for module resolution.
 
 ```bash
-npx charter scaffold                         # write to current directory
-npx charter scaffold --output ./my-project   # write to specific directory
-npx charter scaffold --dry-run               # preview without writing
-npx charter scaffold --format json           # machine-readable manifest
+npx charter adf context --files src/components/Button.tsx,src/api/handler.ts
+npx charter adf context --keywords "react,api"
+npx charter adf context --files src/api/handler.ts --keywords "deploy" --format json
+npx charter adf context --files src/components/Button.tsx --bundle   # output merged context
 ```
 
-Reads the cached build from `.charter/last-build.json`. Run `charter architect` first to populate the cache.
+- `--files <path,...>` — comma-separated file paths to extract keywords from
+- `--keywords <kw,...>` — comma-separated explicit keywords for module resolution
+- `--bundle` — output full merged context instead of just the module list
+- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
+
+Requires at least one of `--files` or `--keywords`. File path keyword extraction uses extension and directory signals (e.g., `.tsx` maps to `react, ui, frontend`; `/api/` maps to `api, backend`).
 
 ## Global Flags
 

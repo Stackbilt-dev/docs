@@ -101,7 +101,7 @@ This isn't theoretical. Charter uses ADF to govern its own codebase. The `.ai/` 
 
 Every commit runs through a pre-commit hook that executes `charter adf evidence --auto-measure`. If a source file exceeds its declared LOC ceiling, the commit is rejected. We can't ship code that violates our own governance rules -- even by accident, even at 2am.
 
-Here is the actual output from Charter's own evidence check (v0.7.0):
+Here is the actual output from Charter's own evidence check (v0.8.0):
 
 ```text
   ADF Evidence Report
@@ -120,6 +120,11 @@ Here is the actual output from Charter's own evidence check (v0.7.0):
     parser_loc: 214 lines (packages/adf/src/parser.ts)
     cli_entry_loc: 191 lines (packages/cli/src/index.ts)
 
+  Section weights:
+    Load-bearing: 3
+    Advisory: 1
+    Unweighted: 0
+
   Constraints:
     [ok] adf_commands_loc: 618 / 650 [lines] -- PASS
     [ok] adf_bundle_loc: 175 / 200 [lines] -- PASS
@@ -129,6 +134,8 @@ Here is the actual output from Charter's own evidence check (v0.7.0):
     [ok] bundler_loc: 125 / 500 [lines] -- PASS
     [ok] parser_loc: 214 / 300 [lines] -- PASS
     [ok] cli_entry_loc: 191 / 200 [lines] -- PASS
+
+  Sync: all sources in sync
 
   Verdict: PASS
 ```
