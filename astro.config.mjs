@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://docs.stackbilt.dev',
+  site: 'https://docs.stackbilder.com',
   output: 'static',
   integrations: [
     mdx(),

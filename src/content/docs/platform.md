@@ -1,131 +1,100 @@
 ---
-title: "StackBilt Platform"
-description: "Overview of Stackbilder's architecture pipeline, plan tiers, authentication, and Compass governance integration on Cloudflare Workers."
+title: "Stackbilder Platform"
+description: "Two-phase scaffold architecture, governance output, plan tiers, and the TarotScript deterministic engine."
 section: "platform"
 order: 4
 color: "#f472b6"
 tag: "04"
 ---
 
-# StackBilt Platform
+# Stackbilder Platform
 
-> **Architect v2 — Active Build.** The platform is in its v2 build cycle. Docs reflect the current stable surface; new capabilities are landing continuously.
+Stackbilder generates governed, production-ready codebases from plain-language descriptions. The architecture uses a two-phase approach: a deterministic skeleton with governance output (Phase 1), and optional LLM-powered code polish (Phase 2).
 
-StackBilt is a governance-enforced architecture planning tool that produces sprint-ready ADRs, deployable scaffolds, and structured artifacts — not vague suggestions.
+## Two-Phase Architecture
 
-## The 6-Mode Pipeline
+### Phase 1: Deterministic Skeleton (TarotScript)
 
-Architecture generation runs through six sequential modes. Each mode builds on the previous, with cross-references via sequential IDs.
+Your intention is processed in two deterministic steps:
 
-| Phase | Mode | Output | IDs |
-|-------|------|--------|-----|
-| Definition | **PRODUCT** | Product Requirements Document | REQ-001, SLA-001, CON-001 |
-| Definition | **UX** | User journey maps and experience flows | UJ-001 |
-| Definition | **RISK** | Risk assessment and value model | RISK-001 |
-| Architecture | **ARCHITECT** | Technical blueprint: services, schemas, boundaries | COMP-001, DS-001 |
-| Execution | **TDD** | Test strategy per component | TS-001 |
-| Execution | **SPRINT** | Sprint-ready ADRs with dependency graph | ADR-001 |
+1. **Classify** — TarotScript maps your description against a vocabulary deck, producing a pattern classification (e.g., "stripe", "github", "mcp", "rest") with confidence scoring.
 
-## Structured Artifacts (v2)
+2. **Scaffold-Cast** — A deterministic spread generates the full project skeleton: file structure, config files, and the `.ai/` governance suite.
 
-Every mode emits a typed JSON artifact alongside prose. These artifacts use sequential, referenceable IDs that chain across modes:
+**Performance:** ~20ms. Zero inference cost. Same input = same output.
 
-- PRODUCT defines `REQ-001`, `SLA-001`, `CON-001`
-- ARCHITECT references `reqRefs: ["REQ-001"]`, `riskRefs: ["RISK-001"]`
-- TDD validates `slaRefs: ["SLA-001"]`
-- SPRINT produces ADRs that trace back to components and requirements
+**Output includes:**
+- Project structure and configuration
+- `.ai/threat-model.md` — STRIDE-based security threat analysis specific to your architecture
+- `.ai/adr-*.md` — Architectural decision records with context, alternatives, and consequences
+- `.ai/test-plan.md` — Integration and unit test specifications with coverage targets
+- Architectural constraints — machine-readable guardrails for Phase 2
 
-Each artifact includes a `confidence` field with an overall score (0-100) and a `missing[]` array surfacing what the AI was not told.
+### Phase 2: LLM Polish (Pro tier)
 
-## Cross-Mode Contradiction Checker
+Takes the Phase 1 skeleton and generates idiomatic, production-grade code using Cerebras fast inference. The differentiator: the LLM works *within* the governance constraints from Phase 1.
 
-After each mode completes, an incremental checker runs 8 validation rules:
+Phase 2 is optional and only available on Pro and Team plans.
 
-- Every `MUST` requirement has a component covering it
-- Every SLA has a validation entry in TDD
-- Every `CRITICAL`/`HIGH` risk has a test scenario
-- ARCHITECT doesn't use technologies RISK marked as blocked
-- Named events appear consistently across modes
-- SPRINT surfaces requirements with no ADR
+## Governance Output
 
-Results are available via the API as a `contradictionReport`.
+Every scaffold ships with governance — it's not a separate product or add-on. The `.ai/` directory is generated deterministically in Phase 1.
 
-## Scaffold Engine
+| File | Content |
+|------|---------|
+| `threat-model.md` | STRIDE analysis: spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege — specific to your architecture |
+| `adr-*.md` | Architectural decision records: the "why" behind non-obvious choices, with alternatives considered |
+| `test-plan.md` | Test specifications: integration scenarios, unit test targets, coverage goals, framework recommendations |
+| `constraints.json` | Machine-readable guardrails that Phase 2 LLM must respect |
 
-Completed flows can generate a deployable Cloudflare Workers project (9-15 files). The scaffold engine uses category-aware routing:
+## Plan Tiers
 
-| Component Category | Generated File |
-|-------------------|----------------|
-| compute / data / integration | `routes/*.ts` (CRUD stubs) |
-| async | `worker/*-queue.ts` (queue handlers) |
-| security | `worker/middleware/*.ts` (auth middleware) |
-| frontend | skipped |
+Flat pricing. No credits, no tokens, no per-action charges.
 
-Template types: `workers-crud-api`, `workers-queue-consumer`, `workers-durable-object`, `workers-websocket`, `workers-cron`, `pages-static`.
+| | Free | Pro | Team |
+|---|---|---|---|
+| **Price** | $0 | $29/mo | $19/seat/mo |
+| **Scaffolds/mo** | 3 | 50 | 50/seat |
+| **Images/mo** | 5 | 100 | Pooled |
+| **Phase 1** | Yes | Yes | Yes |
+| **Phase 2 (LLM polish)** | No | Yes | Yes |
+| **Quality tiers (img-forge)** | Draft-Premium | All 5 | All 5 |
+| **Stacks** | Cloudflare Workers | All supported | All supported |
+| **Governance output** | Yes | Yes | Yes |
 
-Scaffolds include `scaffoldHints` (template classification + confidence score) and `nextSteps` (deployment commands).
+Usage is enforced via invisible quotas through edge-auth. Users see "X scaffolds remaining" at 80% usage, with a hard wall and upgrade CTA at 100%.
 
-## Governance Integration
+## Supported Stacks
 
-When running a governed flow, architecture decisions are validated against blessed patterns via Compass. Violations are flagged depending on governance mode.
+Cloudflare Workers is the currently available stack. Multi-stack expansion is on the roadmap:
 
-| Mode | Behavior | Plan Tier |
-|------|----------|-----------|
-| `PASSIVE` | Log only — never blocks | Free |
-| `ADVISORY` | Warn on issues, flow continues | Pro |
-| `ENFORCED` | Block on FAIL, require remediation | Enterprise |
+| Stack | Status |
+|-------|--------|
+| Cloudflare Workers (D1, KV, R2, DO) | Available |
+| Vercel / Next.js (App Router, Edge Runtime) | Roadmap |
+| AWS Lambda (API Gateway, DynamoDB) | Roadmap |
+| Supabase Edge Functions (Postgres) | Roadmap |
+| Deno Deploy (Fresh, KV) | Roadmap |
 
-Blessed patterns from Compass are injected into the ARCHITECT mode prompt automatically. Governance results (validations, persisted ADR IDs, warnings) are available via `getGovernanceStatus`.
+## API
 
-### Advanced Governance Configurations
+Stackbilder exposes server-side API routes at `stackbilder.com/api/*`. These call TarotScript and img-forge via Cloudflare service bindings (zero HTTP hop, same-colo execution).
 
-For Compass route taxonomy and auth/MCP endpoints, see [Compass Governance API](/compass-governance-api).
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/flows` | GET | List user's scaffold flows |
+| `/api/flows` | POST | Classify + scaffold-cast a new flow |
+| `/api/flows/:id` | GET | Get flow detail (artifacts, governance, scaffold) |
+| `/api/images/generate` | POST | Create an image generation job |
+| `/api/images` | GET | List user's image jobs |
+| `/api/images/:id` | GET | Get image job status |
 
-Enterprise plans unlock additional governance options:
+All API routes require authentication via `better-auth.session_token` cookie. Session validation runs through an RPC binding to edge-auth.
 
-- **Domain Locking** (`domainLock`) — Locks domain entities after PRODUCT mode to prevent drift. Supports strictness levels, entity creation controls, and vendor allow/block lists.
-- **Per-Mode Quality Thresholds** (`qualityByMode`) — Set different minimum quality scores per execution mode.
-- **Quality Weighting** (`qualityWeighting`) — Hybrid local/CSA weighting for quality evaluation.
-
-## Plan Tiers & Quotas
-
-Every access key is associated with a plan tier that determines rate limits and feature access.
-
-| Quota | Free | Pro | Enterprise |
-|-------|------|-----|------------|
-| AI calls per day | 50 | 500 | Unlimited |
-| Flow runs per day | 10 | 100 | Unlimited |
-| Scaffolds per day | 1 | 10 | Unlimited |
-
-## AI Model Routing
-
-The platform applies a model policy per request. By default, provider/model selection is tier-aware (with per-request overrides and fallback chains available internally).
-
-| Plan | Default Provider | Model |
-|------|-----------------|-------|
-| Free | Gemini | `gemini-2.5-flash-lite` |
-| Pro | Gemini | `gemini-2.5-pro` |
-| Enterprise | Anthropic | `claude-sonnet-4-6` |
-
-Premium-tier model access is enforced by plan. Users can also configure a personal Groq API key for supported flows/endpoints.
-
-## Output Artifacts
-
-Each completed flow produces:
-
-- **PRD** — structured product requirements with `REQ-001` IDs
-- **Experience Maps** — user journeys and touchpoints
-- **Risk Model** — value assessment, compliance flags, blocked patterns
-- **Architecture Blueprint** — services, data contracts, component tree with cross-refs
-- **TDD Strategy** — test surface per component with SLA validation
-- **Sprint ADRs** — executable sprint plan with Architecture Decision Records
-- **Scaffold** — deployable Workers project (on demand)
-- **Contradiction Report** — cross-mode consistency validation
+See [API Reference](/api-reference) for full request/response documentation.
 
 ## Access
 
-Access StackBilt via:
-
-- **Browser UI** at [stackbilt.dev](https://stackbilt.dev) — interactive flow builder
-- **MCP Server** — programmatic agent-driven workflows (see [MCP Integration](/mcp))
-- **REST API** — direct HTTP integration (see [API Reference](/api-reference))
+- **Browser** at [stackbilder.com](https://stackbilder.com)
+- **API** at `stackbilder.com/api/*` (authenticated server routes)
+- **MCP** via the Stackbilt MCP gateway (see [MCP Integration](/mcp))

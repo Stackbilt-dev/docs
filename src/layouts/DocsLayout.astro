@@ -24,7 +24,7 @@ const { title, description, tag, color, order, slug, section, headings } = Astro
 const { sections } = await getNavigation();
 
 const metaDescription = description || `${title} — Charter CLI and StackBilt platform documentation.`;
-const canonicalUrl = `https://docs.stackbilt.dev/${slug}`;
+const canonicalUrl = `https://docs.stackbilder.com/${slug}`;
 const pageTitle = `${title} — Docs by Stackbilt`;
 ---
 
@@ -64,7 +64,7 @@ const pageTitle = `${title} — Docs by Stackbilt`;
       "publisher": {
         "@type": "Organization",
         "name": "Stackbilt",
-        "url": "https://stackbilt.dev"
+        "url": "https://stackbilder.com"
       }
     })} />
   </head>
@@ -79,7 +79,7 @@ const pageTitle = `${title} — Docs by Stackbilt`;
     <nav class="relative z-10 border-b border-sb-border px-6 py-3 flex items-center justify-between font-terminal shrink-0">
       <div class="flex items-center gap-4">
         <a
-          href="https://stackbilt.dev"
+          href="https://stackbilder.com"
           class="flex items-center gap-2 text-[11px] text-sb-muted hover:text-sb-amber transition-colors duration-75 tracking-wider"
         >
           <span class="text-[10px]">&larr;</span>
@@ -98,7 +98,7 @@ const pageTitle = `${title} — Docs by Stackbilt`;
           <kbd class="border border-sb-border px-1 py-0.5 text-[8px] leading-none">/</kbd>
         </button>
         <a
-          href="https://blog.stackbilt.dev"
+          href="https://blog.stackbilder.com"
           target="_blank"
           rel="noopener noreferrer"
           class="hidden sm:block hover:text-sb-amber transition-colors duration-75 tracking-wider"

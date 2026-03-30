@@ -9,10 +9,13 @@ tag: "09"
 
 # img-forge API
 
-img-forge is StackBilt's AI image generation service. Submit a text prompt, get back a generated image. Supports multiple quality tiers (Stable Diffusion XL through Gemini), async job queuing, and content-addressed image storage on R2.
+img-forge is Stackbilder's AI image generation service. Submit a text prompt, get back a generated image. Supports 5 quality tiers (SDXL through Gemini 3.1), async job queuing, and content-addressed image storage on R2.
 
-**Gateway:** `https://imgforge.stackbilt.dev`
-**MCP Server:** `https://img-forge-mcp.blue-pine-edf6.workers.dev/mcp`
+img-forge is included in all Stackbilder plans with no per-image costs. Usage counts against your monthly image quota.
+
+**Platform UI:** [stackbilder.com/images](https://stackbilder.com/images)
+**API:** `stackbilder.com/api/images/*` (authenticated, via service binding to img-forge-gateway)
+**Direct gateway:** `imgforge.stackbilt.dev` (for API key / MCP access)
 
 ## Authentication
 
@@ -200,15 +203,19 @@ Check the status of a generation job. Requires `read` scope.
 |-----------|------|----------|-------------|
 | `job_id` | string (UUID) | Yes | The job ID to check |
 
-## Rate Limits
+## Usage Limits
 
-| Auth Method | Quota | Period | Enforcement |
-|-------------|-------|--------|-------------|
-| Anonymous | 100 images | Calendar month | Per IP, via KV |
-| API key (free tier) | 100 images | Calendar month | Per tenant, via D1 entitlements |
-| OAuth / MCP (free tier) | 100 images | Calendar month | Per tenant, via D1 entitlements |
+Image generation is included in Stackbilder plans. Limits are enforced via invisible quotas — no credits or per-image charges.
 
-When quota is exceeded, the API returns `429` with error code `QUOTA_EXCEEDED` (authenticated) or `RATE_LIMITED` (anonymous).
+| Plan | Monthly Images | Quality Tiers |
+|------|---------------|---------------|
+| Free | 5 | Draft through Premium |
+| Pro | 100 | All 5 tiers |
+| Team | Pooled | All 5 tiers |
+
+Anonymous access (no auth) is rate-limited to 100 images/month per IP.
+
+When quota is exceeded, the API returns `429`. A soft warning appears at 80% usage.
 
 ## Tenant Management
 
