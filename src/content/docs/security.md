@@ -1,6 +1,6 @@
 ---
 title: "Security"
-description: "Stackbilt's security posture: zero trust architecture, supply chain governance, dependency pinning, MCP tool risk classification, and vulnerability reporting."
+description: "Stackbilt's security posture: zero trust architecture, supply chain governance, phantom dependency detection, MCP tool risk classification, and vulnerability reporting."
 section: "platform"
 order: 9
 color: "#ef4444"
@@ -9,7 +9,7 @@ tag: "09"
 
 # Security
 
-> **Policy status:** Adopted 2026-03-27. Applies to all repositories under the Stackbilt-dev organization.
+> **Policy status:** Adopted 2026-03-27, updated 2026-03-31. Applies to all repositories under the Stackbilt-dev organization.
 
 ## Architecture: Edge-First Zero Trust
 
@@ -33,7 +33,12 @@ Cross-tenant data leakage is treated as a critical severity issue regardless of 
 
 ## Supply Chain Governance
 
-Dependency management is a first-class security requirement. The March 2026 LiteLLM supply chain attack demonstrated that transitive dependencies — libraries required by your tools but not directly managed by your team — are a primary attack vector in AI-driven development.
+Dependency management is a first-class security requirement. Two incidents in March 2026 underscore why:
+
+- **LiteLLM (TeamPCP):** Attackers compromised mutable Git tags on the Trivy security scanner to exfiltrate credentials from CI environments. Demonstrated that version tags are not trust anchors.
+- **axios (March 31, 2026):** Attackers compromised a lead maintainer's npm account (`jasonsaayman`), bypassed the project's OIDC trusted publishing pipeline via a legacy CLI token, and published `axios@1.14.1` with a single change: a phantom dependency (`plain-crypto-js`) containing a cross-platform RAT. The malicious package self-destructed after execution, overwriting its own `package.json` with a clean copy. Detection window was approximately 3 hours.
+
+Stackbilt had zero exposure to the axios attack — we use the native `fetch` API exclusively and carry no HTTP client dependencies — but the attack validates every control listed below.
 
 ### Dependency Classification
 
@@ -48,6 +53,17 @@ Dependency management is a first-class security requirement. The March 2026 Lite
 - **Deterministic installs:** All CI pipelines use `npm ci` or `pnpm install --frozen-lockfile`. Floating installs are prohibited.
 - **SHA-pinned GitHub Actions:** All Actions are pinned to full 40-character commit SHAs. Mutable version tags (`@v4`, `@latest`) are prohibited.
 - **Step-scoped secrets:** Workflow-level secret environment variables are prohibited. Secrets are scoped to the minimum required step.
+- **Lockfile diffing on every PR:** Any change to `package-lock.json` or `pnpm-lock.yaml` triggers manual review. New transitive dependencies are flagged.
+- **Phantom dependency detection:** Every entry in `dependencies` must correspond to an actual `import` or `require` in source code. Dependencies that appear only in `package.json` without a source-level reference are treated as suspicious and investigated before merge.
+- **Postinstall script auditing:** New or modified `postinstall`, `preinstall`, or `prepare` hooks in any dependency are flagged during review. Lifecycle scripts are the primary execution vector in npm supply chain attacks.
+
+### Publishing Integrity
+
+Stackbilt npm packages (when published) use GitHub Actions OIDC trusted publishing exclusively. Long-lived npm tokens are prohibited. This eliminates the attack vector exploited in the axios compromise, where a stolen CLI token was used to bypass the project's CI-based publishing pipeline.
+
+### Native-First Dependency Philosophy
+
+Where platform APIs exist, we use them. Cloudflare Workers provide `fetch`, `crypto`, `streams`, and `WebSocket` natively. We do not depend on npm packages for capabilities the runtime already provides. This is not just a performance choice — it eliminates entire categories of supply chain risk. The axios attack could not have affected Stackbilt because we never had a reason to install an HTTP client library.
 
 ## MCP Tool Risk Classification
 
@@ -66,10 +82,11 @@ Tools follow a "One Tool = One Explicit Capability" pattern. Tools must not perf
 
 Stackbilt operates autonomous AI agents for code generation, testing, and infrastructure tasks. These agents are governed by a four-layer safety architecture:
 
-1. **Hard stops:** Runtime hooks block destructive operations (`rm -rf`, `git push --force`, `DROP TABLE`, production deploys).
-2. **Soft stops:** Mission brief constraints injected into agent system prompts.
-3. **Blast radius containment:** Every autonomous task runs on an isolated branch (`auto/{task-id}`). Integration happens only through reviewed pull requests.
-4. **Authority levels:** Tasks are classified as `operator` (full access), `auto_safe` (docs/tests/research only), or `proposed` (requires human approval).
+1. **Hard stops:** Runtime hooks block destructive operations (`rm -rf`, `git push --force`, `DROP TABLE`, production deploys), secret access, and interactive prompts.
+2. **Soft stops:** Mission brief constraints injected into agent system prompts with explicit directory and file-scope permissions.
+3. **Blast radius containment:** Every autonomous task runs on an isolated branch (`auto/{category}/{task-id}`). Integration happens only through reviewed pull requests. Concurrent task limits (5 per repo, 8 per day) prevent merge conflict storms.
+4. **Authority levels:** Tasks are classified as `operator` (full access), `auto_safe` (docs/tests/research — PR is the approval gate), or `proposed` (requires human approval before execution).
+5. **Churn detection:** Self-improvement tasks are blocked from re-touching files modified by other autonomous tasks within the last 14 days, preventing oscillation loops.
 
 ## Reporting a Vulnerability
 
