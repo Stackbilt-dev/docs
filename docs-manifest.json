@@ -15,32 +15,6 @@
           "color": "#2ea043",
           "tag": "01"
         },
-      }
-    },
-    "edgestack": {
-      "repo": "edgestack_v2",
-      "pages": {
-        "platform.md": {
-          "source": "docs/platform.md",
-          "section": "platform",
-          "order": 4,
-          "color": "#f472b6",
-          "tag": "04"
-        },
-        "mcp.md": {
-          "source": "docs/mcp.md",
-          "section": "platform",
-          "order": 5,
-          "color": "#22d3ee",
-          "tag": "05"
-        },
-        "api-reference.md": {
-          "source": "docs/api-reference.md",
-          "section": "platform",
-          "order": 7,
-          "color": "#c084fc",
-          "tag": "07"
-        },
         "compass-governance-api.md": {
           "source": "docs/compass-governance-api.md",
           "section": "platform",
@@ -50,15 +24,53 @@
         }
       }
     },
-    "ecosystem": {
-      "repo": "edgestack_v2",
+    "stackbilt-web": {
+      "repo": "stackbilt-web",
       "pages": {
+        "platform.md": {
+          "source": "docs/platform.md",
+          "section": "platform",
+          "order": 4,
+          "color": "#f472b6",
+          "tag": "04"
+        },
         "ecosystem.md": {
           "source": "docs/ecosystem.md",
           "section": "ecosystem",
           "order": 6,
           "color": "#c084fc",
           "tag": "06"
+        },
+        "api-reference.md": {
+          "source": "docs/api-reference.md",
+          "section": "platform",
+          "order": 7,
+          "color": "#c084fc",
+          "tag": "07"
+        }
+      }
+    },
+    "mcp-gateway": {
+      "repo": "stackbilt-mcp-gateway",
+      "pages": {
+        "mcp.md": {
+          "source": "docs/mcp.md",
+          "section": "platform",
+          "order": 5,
+          "color": "#22d3ee",
+          "tag": "05"
+        }
+      }
+    },
+    "aegis": {
+      "repo": "aegis-oss",
+      "pages": {
+        "aegis.md": {
+          "source": "docs/architecture.md",
+          "section": "ecosystem",
+          "order": 2,
+          "color": "#8b8bff",
+          "tag": "02"
         }
       }
     },
