@@ -1,10 +1,57 @@
 ---
-title: "Charter Kit"
-description: "AI-first developer framework for governance and project scaffolding"
+title: "Getting Started"
+description: "Sign up, explore the platform, and install the governance CLI in under five minutes."
 section: "charter"
 order: 2
 color: "#2ea043"
 tag: "02"
+---
+
+# Getting Started
+
+## Sign Up
+
+Stackbilder uses OAuth for instant account creation -- no waitlist, no invite codes. Sign up at [stackbilder.com/login](https://stackbilder.com/login) using either provider:
+
+- **GitHub** -- recommended for developers
+- **Google** -- alternative for non-GitHub users
+
+### What Happens on First Sign-In
+
+1. Click "Sign in with GitHub" (or Google) on `stackbilder.com/login`
+2. You are redirected to `auth.stackbilt.dev` for OAuth authentication
+3. The OAuth provider authenticates you and redirects back
+4. Edge-auth automatically provisions your account:
+   - Creates your **organization** (named after your profile)
+   - Creates a **default project** under the org
+   - Creates a **personal tenant** with free-tier entitlements
+   - Provisions monthly quotas (3 scaffolds, 5 images)
+5. You land on the Stackbilder dashboard, ready to create your first scaffold
+
+No email verification step, no approval queue. The entire flow takes under 10 seconds.
+
+### Session Management
+
+After sign-in, a `better-auth.session_token` cookie is set. This cookie authenticates all subsequent requests to Stackbilder, img-forge, and the MCP gateway automatically. Sessions are validated via edge-auth's RPC binding with near-zero latency.
+
+## Your First Scaffold
+
+Once signed in, create your first governed codebase:
+
+1. Go to [stackbilder.com](https://stackbilder.com)
+2. Describe what you want to build in plain language (e.g., "A REST API for managing subscriptions with Stripe")
+3. Stackbilder classifies your intention and generates a complete project skeleton in ~20ms
+4. Download the scaffold -- it includes your code structure, config files, and the full `.ai/` governance suite
+
+Every scaffold ships with governance output:
+- `.ai/threat-model.md` -- STRIDE-based security analysis specific to your architecture
+- `.ai/adr-*.md` -- Architectural decision records
+- `.ai/test-plan.md` -- Test specifications with coverage targets
+
+### Upgrading to Pro
+
+The free tier includes 3 scaffolds and 5 images per month. To unlock 50 scaffolds, 100 images, Phase 2 LLM polish, and all image quality tiers, upgrade to Pro at $29/mo from [stackbilder.com/pricing](https://stackbilder.com/pricing). See [Billing & Subscriptions](/billing) for details.
+
 ---
 
 # Charter Kit

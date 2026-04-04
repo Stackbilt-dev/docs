@@ -126,7 +126,7 @@ All services use edge-auth (`auth.stackbilt.dev`) for centralized authentication
 - **Session cookies** — `better-auth.session_token`, validated via RPC service binding
 - **API keys** — `ea_*`, `sb_live_*`, `sb_test_*` prefixes for programmatic access
 
-The platform frontend (`stackbilder.com`) validates sessions via an RPC binding to edge-auth — near-zero latency, no HTTP hop.
+See [API Key Management](/api-keys) for generation, rotation, and revocation. The platform frontend (`stackbilder.com`) validates sessions via an RPC binding to edge-auth — near-zero latency, no HTTP hop.
 
 ## Pricing
 
@@ -138,7 +138,7 @@ Flat tiers. No credits, no tokens, no per-action charges.
 | Pro | 50 | 100 | $29/mo |
 | Team | 50/seat | Pooled | $19/seat/mo |
 
-Every plan includes full governance output. See [stackbilder.com/pricing](https://stackbilder.com/pricing).
+Every plan includes full governance output. See [stackbilder.com/pricing](https://stackbilder.com/pricing) and [Billing & Subscriptions](/billing) for checkout flow and subscription management.
 
 ## Multi-Stack Roadmap
 
