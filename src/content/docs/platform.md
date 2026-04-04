@@ -64,6 +64,8 @@ Flat pricing. No credits, no tokens, no per-action charges.
 
 Usage is enforced via invisible quotas through edge-auth. Users see "X scaffolds remaining" at 80% usage, with a hard wall and upgrade CTA at 100%.
 
+For checkout flow, subscription management, and quota details, see [Billing & Subscriptions](/billing). For programmatic access via API keys, see [API Key Management](/api-keys).
+
 ## Supported Stacks
 
 Cloudflare Workers is the currently available stack. Multi-stack expansion is on the roadmap:
