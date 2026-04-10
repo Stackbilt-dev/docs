@@ -29,7 +29,7 @@ Charter is the open-source CLI. Stackbilder and img-forge are commercial service
 | **TarotScript** | `tarotscript-worker` (service binding) | Deterministic scaffold engine — intent classification, scaffold-cast spreads, grimoire persistence |
 | **img-forge** | `img-forge-gateway` (service binding) | AI image generation API, async job queue, R2 image storage |
 | **Auth** | `auth.stackbilt.dev` | Centralized auth — OAuth (GitHub/Google), session management, API keys, quota, billing |
-| **AEGIS** | `aegis.stackbilt.dev` | Internal cognitive agent — memory, goals, task pipeline |
+| **AEGIS** | `aegis.stackbilt.dev` | Persistent AI agent framework — see [aegis-oss](https://github.com/Stackbilt-dev/aegis-oss) |
 | **Docs** | `docs.stackbilder.com` | Documentation (this site) |
 | **Blog** | `blog.stackbilder.com` | Blog and changelog |
 
@@ -139,6 +139,42 @@ Flat tiers. No credits, no tokens, no per-action charges.
 | Team | 50/seat | Pooled | $19/seat/mo |
 
 Every plan includes full governance output. See [stackbilder.com/pricing](https://stackbilder.com/pricing).
+
+## Open Source Libraries
+
+Beyond Charter and the commercial services, Stackbilt maintains a set of edge-native open source libraries. They are standalone, composable, and deliberately scoped — each solves one problem Cloudflare Workers developers hit repeatedly.
+
+| Library | Repo | Purpose |
+|---|---|---|
+| **Charter CLI** | [Stackbilt-dev/charter](https://github.com/Stackbilt-dev/charter) | Governance runtime, ADF context compiler, CLI gateway (Apache-2.0) |
+| **Stackbilt MCP Gateway** | [Stackbilt-dev/stackbilt-mcp-gateway](https://github.com/Stackbilt-dev/stackbilt-mcp-gateway) | OAuth-authenticated MCP gateway routing to Stackbilt platform services |
+| **AEGIS (OSS framework)** | [Stackbilt-dev/aegis-oss](https://github.com/Stackbilt-dev/aegis-oss) | Persistent AI agent framework for Workers — multi-tier memory, goals, dreaming cycles, MCP native |
+| **llm-providers** | [Stackbilt-dev/llm-providers](https://github.com/Stackbilt-dev/llm-providers) | Multi-LLM failover with circuit breakers, cost tracking, intelligent retry |
+| **worker-observability** | [Stackbilt-dev/worker-observability](https://github.com/Stackbilt-dev/worker-observability) | Edge-native observability — health checks, structured logging, metrics, tracing, SLI/SLO monitoring |
+| **audit-chain** | [Stackbilt-dev/audit-chain](https://github.com/Stackbilt-dev/audit-chain) | Tamper-evident audit trail via SHA-256 hash chaining with R2 immutability and D1 indexing |
+| **feature-flags** | [Stackbilt-dev/feature-flags](https://github.com/Stackbilt-dev/feature-flags) | KV-backed feature flags — per-tenant, canary rollouts, A/B conditions, Hono middleware |
+| **contracts** | [Stackbilt-dev/contracts](https://github.com/Stackbilt-dev/contracts) | Stackbilt Contract Ontology Layer — ODD-driven code generation from TypeScript+Zod contracts |
+| **cc-taskrunner** | [Stackbilt-dev/cc-taskrunner](https://github.com/Stackbilt-dev/cc-taskrunner) | Autonomous task queue for Claude Code with safety hooks, branch isolation, PR creation |
+| **Social Sentinel** | [Stackbilt-dev/social-sentinel](https://github.com/Stackbilt-dev/social-sentinel) | Privacy-first social sentiment monitoring — PII redaction, Workers AI sentiment analysis |
+| **Mindspring** | [Stackbilt-dev/mindspring](https://github.com/Stackbilt-dev/mindspring) | Semantic search for AI conversation exports — upload, embed, search, RAG chat |
+| **n8n-transpiler** | [Stackbilt-dev/n8n-transpiler](https://github.com/Stackbilt-dev/n8n-transpiler) | n8n automation JSON → deployable Workers transpiler |
+| **equity-scenario-sim** | [Stackbilt-dev/equity-scenario-sim](https://github.com/Stackbilt-dev/equity-scenario-sim) | Cap table simulator for partnership negotiations |
+| **ai-playbook** | [Stackbilt-dev/ai-playbook](https://github.com/Stackbilt-dev/ai-playbook) | AI interaction frameworks, philosophical archetypes, context engineering patterns |
+
+All libraries live under the [`Stackbilt-dev`](https://github.com/Stackbilt-dev) GitHub organization. Contributions welcome — see each repo's `CONTRIBUTING.md` and `SECURITY.md`.
+
+## OSS Core ↔ Commercial Extension Pattern
+
+Some capabilities in the Stackbilt ecosystem ship as a public OSS core with a commercial productization built on top. The OSS core is the canonical, publicly-named reference implementation — that's what gets documented, discussed, contributed to, and written about. Commercial extensions are implementation details: they are not publicly named, not separately documented, and not referenced in public artifacts.
+
+A concrete example: [`aegis-oss`](https://github.com/Stackbilt-dev/aegis-oss) is the full persistent AI agent framework for Cloudflare Workers — multi-tier memory, autonomous goals, dreaming cycles, MCP native. It is the canonical AEGIS and is fully open source under its repository license. The commercial Stackbilt platform builds additional integrations and productization on top of that core. When referring to "AEGIS" in any public context — blog posts, GitHub issues, conference talks, external documentation, social media — the reference is to `aegis-oss`. Commercial extensions exist but are not separately named, advertised, or linked publicly.
+
+This convention serves two purposes:
+
+1. **OSS clarity.** Contributors, users, and researchers engage with one canonical repo per capability. There is no ambiguity about "which version are we talking about."
+2. **Moat protection.** Commercial productization is kept out of public discussion, which prevents feature leaks and competitive mapping of the commercial surface.
+
+Internal contributors — including autonomous agents filing issues or drafting documentation — must follow the same convention. Public artifacts reference the OSS core only. See [Outbound Disclosure](/security/#outbound-disclosure--filing-against-stackbilt-dev-public-repositories) for the full authoring rules.
 
 ## Multi-Stack Roadmap
 
