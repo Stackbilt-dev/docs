@@ -1,0 +1,178 @@
+{
+  "$schema": "https://docs.stackbilt.dev/ecosystem/repo-visibility.schema.json",
+  "version": "1.0.0",
+  "updated": "2026-04-10",
+  "canonical_url": "https://docs.stackbilt.dev/ecosystem/repo-visibility.json",
+  "purpose": "Authoritative public-facing manifest of Stackbilt-dev open source repositories. Lists only repos that are safe to reference publicly. Consumed by internal automation to route findings and by external researchers to confirm which repos are in scope for public discussion.",
+
+  "default_policy": {
+    "description": "Any Stackbilt-dev repository not listed in the `repos` array below is to be treated as private. Private repositories must not be referenced by name in any public artifact — blog posts, GitHub issues, PR descriptions, commit messages, conference talks, or social media posts. This includes repositories that may become public in the future but have not yet been added to this manifest.",
+    "unlisted_repo_handling": "treat_as_private",
+    "new_repo_onboarding": "Public repositories graduate into this manifest via a PR on Stackbilt-dev/docs updating this file. Opening a repo to public visibility on GitHub does not automatically add it here — the manifest is the canonical source of truth for `safe_to_reference_publicly`, not GitHub's own visibility flag."
+  },
+
+  "disclosure_channels": {
+    "ghsa": "GitHub Security Advisory on the target repository. Preferred for critical and high-severity security findings — coordinated disclosure with the repo maintainer, tracked in the repo's security tab.",
+    "email": "admin@stackbilt.dev — the canonical Stackbilt security address. Use as fallback when GHSA is not appropriate or for findings spanning multiple repositories.",
+    "public_issue": "Public GitHub issue on the target repository. Appropriate only for non-security findings: low-severity hardening, documentation gaps, test coverage, refactors, and performance work."
+  },
+
+  "routing_matrix": {
+    "description": "Severity → channel routing for findings against repos in this manifest. See https://docs.stackbilt.dev/security/ § Outbound Disclosure for the full policy.",
+    "critical": "ghsa",
+    "high_exploitable": "ghsa",
+    "medium_exploitable": "ghsa",
+    "medium_hardening": "public_issue",
+    "low": "public_issue",
+    "docs": "public_issue",
+    "test_gap": "public_issue"
+  },
+
+  "reference_framing_rules": {
+    "description": "When drafting public artifacts about these repos, cite only sources that are already publicly published.",
+    "allowed_citations": [
+      "Published RFCs (RFC 6749, RFC 7636, RFC 7519, etc.)",
+      "OWASP guidance and Top 10 entries",
+      "Cloudflare Workers documentation at developers.cloudflare.com",
+      "Published npm packages on npmjs.com",
+      "Commits, issues, and PRs in repositories listed in this manifest",
+      "Publicly-dated blog posts at blog.stackbilder.com"
+    ],
+    "prohibited_citations": [
+      "Commits, issues, or PRs in Stackbilt-dev repositories not listed in this manifest",
+      "Internal policy documents, agent memory stores, CLAUDE.md files",
+      "Internal incident descriptions or postmortems not publicly published",
+      "Sibling private service names or binding identifiers",
+      "Non-public pricing, customer names, or commercial configuration"
+    ]
+  },
+
+  "repos": [
+    {
+      "name": "charter",
+      "public_name": "Charter CLI",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "OSS governance runtime, ADF context compiler, CLI gateway (Apache-2.0)",
+      "npm_package": "@stackbilt/cli",
+      "docs_url": "https://docs.stackbilt.dev/platform/#charter"
+    },
+    {
+      "name": "docs",
+      "public_name": "Stackbilt Documentation",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "docs.stackbilt.dev — public documentation site",
+      "docs_url": "https://docs.stackbilt.dev/"
+    },
+    {
+      "name": ".github",
+      "public_name": "Stackbilt-dev Organization Profile",
+      "disclosure_channel": "public_issue",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "GitHub organization profile and shared templates"
+    },
+    {
+      "name": "stackbilt-mcp-gateway",
+      "public_name": "Stackbilt MCP Gateway",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "OAuth-authenticated MCP gateway routing to Stackbilt platform services",
+      "docs_url": "https://docs.stackbilt.dev/mcp/"
+    },
+    {
+      "name": "cc-taskrunner",
+      "public_name": "cc-taskrunner",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Autonomous task queue for Claude Code with safety hooks, branch isolation, and PR creation"
+    },
+    {
+      "name": "mindspring",
+      "public_name": "Mindspring",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Semantic search for AI conversation exports (ChatGPT/Claude)"
+    },
+    {
+      "name": "aegis-oss",
+      "public_name": "AEGIS",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Persistent AI agent framework for Cloudflare Workers — multi-tier memory, autonomous goals, dreaming cycles, MCP native",
+      "has_commercial_extension": true,
+      "public_reference_note": "When discussing AEGIS in any public context, always reference aegis-oss. The commercial platform builds additional integrations on top of this OSS framework; those integrations are implementation details and are not publicly named."
+    },
+    {
+      "name": "n8n-transpiler",
+      "public_name": "n8n-transpiler",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "n8n workflow JSON → Cloudflare Workers transpiler"
+    },
+    {
+      "name": "social-sentinel",
+      "public_name": "Social Sentinel",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Privacy-first social sentiment monitoring with PII redaction and Workers AI sentiment analysis",
+      "has_commercial_extension": true,
+      "public_reference_note": "When discussing Social Sentinel in any public context, always reference social-sentinel. Commercial extensions are implementation details and are not publicly named."
+    },
+    {
+      "name": "equity-scenario-sim",
+      "public_name": "Equity Scenario Sim",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Cap table simulator for partnership negotiations — deal structures, vesting, exit payouts"
+    },
+    {
+      "name": "ai-playbook",
+      "public_name": "AI Playbook",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "AI interaction frameworks, philosophical archetypes, and context engineering patterns"
+    },
+    {
+      "name": "llm-providers",
+      "public_name": "llm-providers",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Multi-LLM failover with circuit breakers, cost tracking, and intelligent retry"
+    },
+    {
+      "name": "audit-chain",
+      "public_name": "audit-chain",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Tamper-evident audit trail for Cloudflare Workers — SHA-256 hash chaining with R2 immutability and D1 indexing"
+    },
+    {
+      "name": "worker-observability",
+      "public_name": "worker-observability",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Edge-native observability for Cloudflare Workers — health checks, structured logging, metrics, tracing, SLI/SLO monitoring"
+    },
+    {
+      "name": "feature-flags",
+      "public_name": "feature-flags",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Edge-native feature flags for Cloudflare Workers — KV-backed, per-tenant, canary rollouts, A/B conditions, Hono middleware"
+    },
+    {
+      "name": "contracts",
+      "public_name": "Stackbilt Contracts",
+      "disclosure_channel": "ghsa",
+      "fallback_channel": "admin@stackbilt.dev",
+      "ecosystem_role": "Contract Ontology Layer — ODD-driven code generation from TypeScript+Zod contracts"
+    }
+  ],
+
+  "agent_consumers": {
+    "description": "Internal agents that consume this manifest at pre-flight before filing any issue, PR, or security advisory against a Stackbilt-dev repository. See https://docs.stackbilt.dev/security/ § Outbound Disclosure for agent responsibilities.",
+    "lookup_behavior": "Agents fetch this manifest at session start, cache for the session, and check the target repo's name against the `repos` array before any filing action. A target repo not in the array is treated as private per `default_policy.unlisted_repo_handling`.",
+    "scrub_list_generation": "Agents generate their private-repo scrub list dynamically at session start by calling `gh api orgs/Stackbilt-dev/repos --paginate` with authenticated credentials and extracting the names of private repositories. The scrub list is held in memory only, never persisted, and never published. This manifest does not contain the scrub list directly — it contains only the positive (public) allowlist."
+  }
+}
