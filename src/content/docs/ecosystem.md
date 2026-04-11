@@ -26,8 +26,8 @@ Charter is the open-source CLI. Stackbilder and img-forge are commercial service
 | Service | Domain | Purpose |
 |---------|--------|---------|
 | **Stackbilder Platform** | `stackbilder.com` | Product frontend, Astro server API routes, service binding gateway |
-| **TarotScript** | `tarotscript-worker` (service binding) | Deterministic scaffold engine — intent classification, scaffold-cast spreads, grimoire persistence |
-| **img-forge** | `img-forge-gateway` (service binding) | AI image generation API, async job queue, R2 image storage |
+| **TarotScript** | internal service binding | Deterministic scaffold engine — intent classification, scaffold-cast spreads, grimoire persistence |
+| **img-forge** | internal service binding | AI image generation API, async job queue, R2 image storage |
 | **Auth** | `auth.stackbilt.dev` | Centralized auth — OAuth (GitHub/Google), session management, API keys, quota, billing |
 | **AEGIS** | `aegis.stackbilt.dev` | Persistent AI agent framework — see [aegis-oss](https://github.com/Stackbilt-dev/aegis-oss) |
 | **Docs** | `docs.stackbilder.com` | Documentation (this site) |
@@ -120,13 +120,13 @@ See [img-forge API](/img-forge) for the full REST and MCP reference.
 
 ## Authentication
 
-All services use edge-auth (`auth.stackbilt.dev`) for centralized authentication:
+All services use Stackbilt Auth (`auth.stackbilt.dev`) for centralized authentication:
 
 - **OAuth** — GitHub and Google sign-in via Better Auth
 - **Session cookies** — `better-auth.session_token`, validated via RPC service binding
 - **API keys** — `ea_*`, `sb_live_*`, `sb_test_*` prefixes for programmatic access
 
-The platform frontend (`stackbilder.com`) validates sessions via an RPC binding to edge-auth — near-zero latency, no HTTP hop.
+The platform frontend (`stackbilder.com`) validates sessions via an RPC binding to the Stackbilt Auth service — near-zero latency, no HTTP hop.
 
 ## Pricing
 
