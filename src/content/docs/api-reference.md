@@ -9,269 +9,363 @@ tag: "07"
 
 # API Reference
 
-Complete reference for the Stackbilder platform API.
+Complete reference for the StackBilt Stackbilder Architect API.
 
-**Base URL:** `https://stackbilder.com`
+**Base URL:** `https://stackbilt.dev`
 
-All API routes are Astro server endpoints that call backend services (TarotScript, img-forge) via Cloudflare service bindings. No separate API domain — frontend and API share one worker.
+Flows created on one environment do not exist on another (separate Durable Objects).
 
 ## Authentication
 
-All `/api/*` endpoints require an authenticated session. Authentication is handled via the `better-auth.session_token` cookie, set during OAuth sign-in through edge-auth (`auth.stackbilt.dev`).
+Authentication is endpoint-specific. Most protected endpoints accept one of:
 
-### Session Flow
+| Method | Header | Format |
+|--------|--------|--------|
+| MCP Token | `Authorization` | `Bearer <STACKBILT_MCP_TOKEN>` |
+| Access Key | `X-Access-Key` | `ska_...` |
+| Compass JWT | `Authorization` | `Bearer <jwt>` (RS256) |
 
-1. User clicks "Sign in with GitHub" (or Google) on `stackbilder.com/login`
-2. Redirects to `auth.stackbilt.dev/auth/sign-in/github`
-3. OAuth callback sets `better-auth.session_token` cookie
-4. All subsequent API requests include the cookie automatically
+`GET /mcp/info` is public (capability discovery / health check).
 
-### Session Validation
+Public/special-auth exceptions include:
 
-The platform validates sessions via an RPC binding to edge-auth (`EdgeAuthEntrypoint.validateSession`). This runs in the same Cloudflare colo with near-zero latency.
+- `POST /api/webhooks/stripe` (Stripe signature-verified webhook)
+- `POST /api/trial/start` (public trial bootstrap)
+- `GET /api/trial/status` and `POST /api/trial/upgrade-intent` (trial token required, not access key)
+- `POST /api/self-serve/access-key` (public self-serve key issuance)
+- `POST /api/feedback/submit` and `POST /api/contact`
 
-**Session claims returned:**
+### Token Exchange
 
+Exchange an access key for a Compass JWT that works at both StackBilt and Compass:
+
+```bash
+POST /api/auth/token
+X-Access-Key: ska_...
+Content-Type: application/json
+
+{ "expires_in": 3600 }
+```
+
+Response:
+```json
+{ "access_token": "eyJ...", "token_type": "Bearer", "expires_in": 3600 }
+```
+
+## Flow API
+
+### Create & Run Full Flow
+
+```
+POST /api/flow/full
+```
+
+Kickoff is asynchronous — returns `flowId` immediately. Poll `GET /api/flow/:id` for progress, or use the `getFlowSummary` MCP tool for a lightweight summary.
+
+**Request:**
 ```json
 {
-  "userId": "string",
-  "email": "string",
-  "orgId": "string | null",
-  "expiresAt": 1234567890
+  "input": "Description of your system to architect",
+  "config": {
+    "sprint": {
+      "teamSize": "SMALL_TEAM",
+      "sprintDuration": "TWO_WEEKS"
+    },
+    "governance": {
+      "mode": "ADVISORY",
+      "projectId": "your-project-id",
+      "transport": "auto",
+      "qualityThreshold": 80
+    }
+  }
 }
 ```
 
-## Flows API
+**Response:**
+```json
+{
+  "flowId": "uuid",
+  "status": "RUNNING",
+  "createdAt": "<ISO8601>"
+}
+```
 
-### Create a Flow
+### Get Flow Status (Full)
 
 ```
-POST /api/flows
+GET /api/flow/:id
 ```
 
-Classifies the intention via TarotScript, then runs a `scaffold-cast` spread to generate the project skeleton and governance output.
+Returns the complete flow state (100KB+) including all mode outputs, structured artifacts, and contradiction reports. **For lightweight polling, use the `getFlowSummary` MCP tool instead.**
 
-**Request body:**
+### Get Flow Summary (MCP Only)
+
+**MCP-only operation.** This summary is not available as a direct REST call. Use the `getFlowSummary` MCP tool instead. The REST equivalent for full flow state is `GET /api/flow/:id`.
+
+The `getFlowSummary` tool returns a compact (<2KB) progress snapshot. Recommended for polling from AI agents.
 
 ```json
 {
-  "intention": "A REST API for managing subscriptions with Stripe",
-  "project_type": "api"
+  "flowId": "abc-123",
+  "status": "IN_PROGRESS",
+  "currentMode": "ARCHITECT",
+  "elapsed": "2m34s",
+  "modes": {
+    "PRODUCT": { "status": "COMPLETED", "duration": "28s", "qualityPass": true },
+    "UX": { "status": "COMPLETED", "duration": "31s", "qualityPass": true },
+    "ARCHITECT": { "status": "RUNNING", "duration": null, "qualityPass": false }
+  },
+  "contradictions": { "critical": 0, "high": 0, "coverageGaps": 0, "missingItems": 2 },
+  "artifactCounts": { "requirements": 18, "risks": 5, "components": 0, "adrs": 0 },
+  "usage": { "totalInputTokens": 12450, "totalOutputTokens": 8320 }
 }
 ```
+
+### Get Artifact (MCP Only)
+
+**MCP-only operation.** The `/artifacts/:MODE/structured` path does not exist as a REST route. Use the `getArtifact` MCP tool to retrieve a typed JSON artifact for a single mode.
+
+The actual REST artifact routes are:
+
+```
+GET /api/flow/:id/artifacts/:MODE
+```
+
+Returns artifact metadata for a mode. Modes: `PRODUCT`, `UX`, `RISK`, `ARCHITECT`, `TDD`, `SPRINT`.
+
+```
+GET /api/flow/:id/artifacts/:MODE/content
+```
+
+Returns chunked artifact content for a mode.
+
+The `getArtifact` MCP tool combines these into a single typed response (2-5KB):
+
+```json
+{
+  "schemaVersion": "2.0.0",
+  "mode": "PRODUCT",
+  "requirements": [
+    { "id": "REQ-001", "text": "User authentication via JWT", "priority": "MUST", "category": "functional" }
+  ],
+  "entities": ["User", "Payment"],
+  "slas": [{ "id": "SLA-001", "metric": "uptime", "target": "99.9%", "window": "monthly" }],
+  "constraints": [{ "id": "CON-001", "type": "security", "text": "All data encrypted at rest" }],
+  "confidence": { "overall": 85, "missing": ["pricing model"] }
+}
+```
+
+Each mode produces sequential, referenceable IDs: `REQ-001`, `SLA-001`, `RISK-001`, `COMP-001`, `TS-001`, `ADR-001`. Downstream modes cross-reference these IDs.
+
+### Get Flow Package
+
+```
+GET /api/flow/:id/package
+```
+
+Returns the complete structured project package (100-300KB). Supports `Accept: application/json` or `Accept: text/markdown`.
+
+### Get Flow Quality
+
+```
+GET /api/flow/:id/quality
+```
+
+Returns concise quality checks: `grounding_pass`, `state_safety_pass`, `artifact_completeness_pass`, `overall_pass`.
+
+### Run Single Mode
+
+```
+POST /api/flow/:MODE
+```
+
+Runs one mode against a flow context. If `flowId` is omitted, creates a new flow. Modes: `PRODUCT`, `UX`, `RISK`, `ARCHITECT`, `TDD`, `SPRINT`.
+
+### Flow Lifecycle
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/flow/:id/advance` | POST | Advance to next pending mode |
+| `/api/flow/:id/resume` | POST | Resume from last failed step |
+| `/api/flow/:id/recover` | POST | Rerun failed mode + recompute downstream |
+| `/api/flow/:id/cancel` | POST | Cancel a running flow |
+| `/api/flow/:id/logs` | GET | Execution timeline with timestamps |
+| `/api/flow/:id/codegen` | GET | `project.json` draft for codegen engine |
+
+## Scaffold Engine
+
+```
+GET /api/flow/:id/scaffold
+```
+
+Generates a deployable Cloudflare Workers project from a completed flow.
+
+**Prerequisites:** ARCHITECT mode must be completed.
+
+**Content negotiation:**
+- `Accept: application/json` — file manifest with `scaffoldHints` + `nextSteps`
+- `Accept: application/zip` — downloadable ZIP archive
+
+**JSON Response:**
+```json
+{
+  "flowId": "uuid",
+  "files": [
+    { "path": "wrangler.toml", "content": "..." },
+    { "path": "package.json", "content": "..." },
+    { "path": "routes/api-gateway.ts", "content": "..." },
+    { "path": "worker/event-queue.ts", "content": "..." }
+  ],
+  "scaffoldHints": {
+    "templateType": "workers-crud-api",
+    "primaryFramework": "Hono",
+    "hasQueueHandlers": true,
+    "hasScheduledJobs": false,
+    "hasDurableObjects": false,
+    "confidence": 85
+  },
+  "nextSteps": [
+    "mkdir my-project && write each file",
+    "cd my-project && npm install",
+    "npx wrangler d1 create my-db",
+    "npx wrangler dev",
+    "npx wrangler deploy"
+  ]
+}
+```
+
+**Template Types:**
+
+| Type | Description |
+|------|-------------|
+| `workers-crud-api` | Standard REST API with Hono routes |
+| `workers-queue-consumer` | Queue-driven batch processing |
+| `workers-durable-object` | Stateful Durable Object service |
+| `workers-websocket` | WebSocket real-time service |
+| `workers-cron` | Scheduled/cron-driven worker |
+| `pages-static` | Static frontend (no Worker routes) |
+
+**Category-aware file generation:**
+- `compute`/`data`/`integration` → `routes/*.ts` (CRUD stubs)
+- `async` → `worker/*-queue.ts` (queue consumer handlers)
+- `security` → `worker/middleware/*.ts` (auth middleware)
+- `frontend` → skipped
+
+**Rate limiting:** 3 scaffolds per flow per 24 hours. Returns `429` if exceeded.
+
+**Generated files:** `wrangler.toml`, `package.json`, `tsconfig.json`, `worker/index.ts`, `schema.sql` (if D1), `routes/*.ts`, `worker/*-queue.ts`, `worker/middleware/*.ts`, `README.md`, `.gitignore`, `scripts/deploy.sh`, `.charter/config.json`, `governance.md`
+
+## Structured Artifact Contract (v2)
+
+Each mode emits a machine-readable JSON block using the `:::ARTIFACT_JSON_START:::` delimiter. These are extracted, validated, and stored in `FlowState.structuredArtifacts`.
+
+**Contradiction checker** runs incrementally after each mode (8 cross-mode checks):
+- Every `MUST` requirement → component or `reqCoverage` in ARCHITECT
+- Every PRODUCT SLA → `slaValidation` entry in TDD
+- Every `CRITICAL`/`HIGH` risk → test scenario in TDD
+- ARCHITECT must not use `blockedPatterns` from RISK
+- Named events must appear across ARCHITECT and TDD
+- SPRINT surfaces requirements with no ADR as `undecidedReqs`
+
+## Auth & GitHub Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/me` | GET | Current authenticated identity |
+| `/api/auth/token` | POST | Exchange `ska_` key for Compass JWT |
+| `/api/auth/better/*` | ALL | Proxies to the dedicated auth-worker service (Better Auth). Supports session management, API key authentication, and OAuth Provider plugin. Replaces the previous GitHub OAuth flow. Specific sub-routes are handled by the auth-worker and include session introspection and token management. |
+| `/api/self-serve/access-key` | POST | Public self-serve `ska_` key issuance (rate limited, email-based) |
+| `/api/github/repos` | GET/POST | List or create GitHub repos |
+| `/api/github/publish` | POST | Publish a project to GitHub |
+| `/api/github/publish-generated` | POST | Server-side codegen + full repo publish |
+
+## Admin Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/admin/access-keys` | POST | Issue new access key |
+| `/api/admin/access-keys` | GET | List keys (filter by userId, status) |
+| `/api/admin/access-keys/:id` | GET | Inspect one key |
+| `/api/admin/access-keys/:id/link-compass` | POST | Provision/link Compass seat credentials for an existing access key |
+| `/api/admin/access-keys/:id/revoke` | POST | Revoke a key |
+| `/api/admin/access-keys/:id/rotate` | POST | Rotate an access key. Generates a new key and revokes the old one. Returns the new key value. |
+| `/api/admin/usage/:keyId` | GET | Per-key usage dashboard. Optional `?days=N` query param to filter by time window. Returns usage metrics. |
+| `/api/admin/trial/leads` | GET | List trial lead records with associated events. Query params: `limit` (number), `eventsPerLead` (number). |
+| `/api/keys/groq/self` | GET/POST/DELETE | Per-user GROQ key management |
+| `/api/codegen/locks/release` | POST | Release a codegen lock manually. Used to resolve stuck locks. |
+| `/api/codegen/locks/sweep` | POST | Sweep expired codegen locks across all active flows. |
+| `/api/codegen/audit/rollup` | POST | Trigger a codegen audit rollup. Aggregates lock and collision metrics. |
+
+## Trial Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/trial/start` | Start a trial session. Accepts `email` in the request body. Creates a 72-hour trial with 2 flow runs. Returns a `trialToken`, usage counters, and expiry. |
+| `GET` | `/api/trial/status` | Check current trial status. Returns remaining runs, expiry timestamp, and whether the trial is active. |
+| `POST` | `/api/trial/upgrade-intent` | Log upgrade intent for the current trial token. Accepts optional `trigger` and `note`. |
+
+`POST /api/trial/start` returns a `trialToken` plus usage counters (`runsAllowed`, `runsUsed`, `runsRemaining`) and `expiresAt`.
+
+Trial sessions are stored in LEADS KV. Each trial allows 2 flow runs within a 72-hour window.
+
+## Feedback
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/feedback/submit` | Submit feedback (bug report, feature request, or flow quality feedback). Rate limited to 5 submissions per day per IP. Stores in LEADS KV and sends admin notification via Resend. |
+
+**Request body fields:**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `intention` | string | Yes | Plain-language description of what to build |
-| `project_type` | string | No | `saas`, `api`, `dashboard`, `cli`, `library`, `marketplace` (default: `api`) |
+| `message` | string | yes | Feedback content |
+| `type` | enum | yes | `bug` \| `feature` \| `general` \| `flow-quality` |
+| `rating` | number | no | Score from 1–5 |
+| `flowId` | string | no | Associated flow ID |
+| `mode` | string | no | Associated flow mode |
 
-**Response (`201 Created`):**
+## Contact
 
-```json
-{
-  "id": "sha256-hash",
-  "classification": {
-    "pattern": "stripe",
-    "confidence": "high"
-  },
-  "traits": {
-    "route_shape": "REST CRUD + webhooks",
-    "verification": "Stripe signature verification",
-    "bindings": "D1, KV",
-    "framework": "Hono"
-  },
-  "tier2_recommended": false,
-  "output": "...",
-  "facts": { ... }
-}
-```
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/contact` | Landing page contact form submission. Accepts `email`, `team`, and `source` fields. Sends notification via Resend. |
 
-### List Flows
+## Billing (Stripe)
 
-```
-GET /api/flows
-```
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/billing/checkout` | POST | Create Stripe Checkout session |
+| `/api/billing/portal` | GET | Stripe billing portal |
+| `/api/webhooks/stripe` | POST | Webhook receiver (signature verified) |
 
-Returns scaffold-cast readings from the TarotScript grimoire for the authenticated user.
+## MCP Server
 
-**Response:**
+The MCP server exposes 22 tools for AI agent integration (flow execution/inspection plus related platform operations like feedback and artifact amendment). See the [MCP Integration](/mcp) page for full tool documentation.
 
-```json
-{
-  "flows": [
-    {
-      "id": "sha256-hash",
-      "intention": "A REST API for...",
-      "project_type": "api",
-      "status": "completed",
-      "created_at": "2026-03-29T12:00:00Z"
-    }
-  ]
-}
-```
-
-### Get Flow Detail
-
-```
-GET /api/flows/:id
-```
-
-Returns the full flow including governance artifacts, scaffold output, and classification facts.
-
-**Response:**
-
-```json
-{
-  "id": "sha256-hash",
-  "intention": "A REST API for...",
-  "project_type": "api",
-  "status": "completed",
-  "created_at": "2026-03-29T12:00:00Z",
-  "seed": 12345,
-  "artifacts": { ... },
-  "governance": {
-    "threats": "## STRIDE Analysis\nT-001: ...",
-    "adrs": "## Decision\nUse cookie-based sessions...",
-    "test_plan": "## Integration Tests\ntest_auth_flow: ..."
-  },
-  "scaffold": {
-    "files": { "src/index.ts": "...", "wrangler.toml": "..." },
-    "download_url": ""
-  },
-  "output": "..."
-}
-```
-
-## Images API
-
-### Generate an Image
-
-```
-POST /api/images/generate
-```
-
-Creates an image generation job via img-forge. The request is delegated through a service binding with the user's ID for tenant-scoped access.
-
-**Request body:**
-
-```json
-{
-  "prompt": "A cyberpunk cityscape at sunset",
-  "quality_tier": "premium",
-  "negative_prompt": "blurry, low quality"
-}
-```
-
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `prompt` | string | Yes | — | Text description, 1-2000 characters |
-| `quality_tier` | string | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
-| `negative_prompt` | string | No | — | Things to exclude (effective on `draft` tier only) |
-
-**Response (`201 Created`):**
-
-```json
-{
-  "id": "uuid",
-  "job_id": "uuid",
-  "state": "queued",
-  "original_prompt": "A cyberpunk cityscape at sunset",
-  "final_prompt": "A cyberpunk cityscape at sunset, masterpiece, best quality...",
-  "asset_url": null,
-  "created_at": "2026-03-29T12:00:00Z"
-}
-```
-
-### List Images
-
-```
-GET /api/images
-```
-
-Returns image jobs for the authenticated user.
-
-**Query parameters:**
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `limit` | number | 20 | Max 100 |
-| `offset` | number | 0 | Pagination offset |
-| `state` | string | — | Filter: `queued`, `processing`, `completed`, `failed` |
-
-**Response:**
-
-```json
-{
-  "images": [
-    {
-      "id": "uuid",
-      "prompt": "A cyberpunk cityscape...",
-      "quality_tier": "premium",
-      "status": "completed",
-      "image_url": "/v2/assets/sha256hash",
-      "created_at": "2026-03-29T12:00:00Z"
-    }
-  ]
-}
-```
-
-### Get Image Status
-
-```
-GET /api/images/:id
-```
-
-Check the status of a specific image generation job.
-
-**Response:**
-
-```json
-{
-  "id": "uuid",
-  "prompt": "...",
-  "quality_tier": "premium",
-  "status": "completed",
-  "image_url": "/v2/assets/sha256hash",
-  "error": null,
-  "created_at": "2026-03-29T12:00:00Z"
-}
-```
-
-**Job states:** `queued` → `processing` → `completed` | `failed`
-
-Jobs stuck in `processing` for more than 60 seconds are automatically marked `failed`.
-
-## Quality Tiers (img-forge)
-
-| Tier | Provider | Model | Neg. Prompt | Default Size |
-|------|----------|-------|-------------|--------------|
-| `draft` | Cloudflare AI | SDXL Lightning | Yes | 1024x1024 |
-| `standard` | Cloudflare AI | FLUX.2 Klein 4B | No | 1024x768 |
-| `premium` | Cloudflare AI | FLUX.2 Dev | No | 1024x768 |
-| `ultra` | Gemini | Gemini 2.5 Flash | No | 1024x1024 |
-| `ultra_plus` | Gemini | Gemini 3.1 Flash | No | 1024x1024 |
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/mcp` | POST | Streamable HTTP transport |
+| `/mcp` | GET | SSE connection |
+| `/mcp/sse` | GET | Legacy SSE transport |
+| `/mcp/info` | GET | Server capabilities (no auth) |
 
 ## Error Responses
 
-All errors return JSON:
+| HTTP Status | Meaning |
+|-------------|---------|
+| `400` | Invalid request or missing flow state |
+| `401` | Missing authentication |
+| `403` | Invalid token |
+| `404` | Flow or endpoint not found |
+| `429` | Rate limit exceeded |
+| `500` | Server error |
 
-```json
-{
-  "error": "Description of what went wrong"
-}
-```
+JSON-RPC errors (MCP):
 
-| Status | Meaning |
-|--------|---------|
-| `400` | Invalid request (missing/invalid parameters) |
-| `401` | No valid session (redirect to /login) |
-| `404` | Resource not found |
-| `502` | Backend service error (TarotScript or img-forge unavailable) |
-
-## Architecture Notes
-
-- API routes are Astro server endpoints (`src/pages/api/*.ts`)
-- TarotScript is called via `TAROTSCRIPT` service binding (Fetcher)
-- img-forge is called via `IMG_FORGE` service binding (Fetcher) with `X-Service-Binding` secret for delegated auth
-- Session validation uses `AUTH_SERVICE` RPC binding to edge-auth (`EdgeAuthEntrypoint`)
-- All three bindings run in the same Cloudflare colo — zero HTTP hops
+| Code | Meaning |
+|------|---------|
+| `-32700` | Parse error |
+| `-32600` | Invalid request |
+| `-32601` | Method not found |
+| `-32602` | Invalid params |
+| `-32000` | Tool execution failed |
