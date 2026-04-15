@@ -9,13 +9,10 @@ tag: "09"
 
 # img-forge API
 
-img-forge is Stackbilder's AI image generation service. Submit a text prompt, get back a generated image. Supports 5 quality tiers (SDXL through Gemini 3.1), async job queuing, and content-addressed image storage on R2.
+img-forge is StackBilt's AI image generation service. Submit a text prompt, get back a generated image. Supports multiple quality tiers (Stable Diffusion XL through Gemini), async job queuing, and content-addressed image storage on R2.
 
-img-forge is included in all Stackbilder plans with no per-image costs. Usage counts against your monthly image quota.
-
-**Platform UI:** [stackbilder.com/images](https://stackbilder.com/images)
-**API:** `stackbilder.com/api/images/*` (authenticated, via service binding to img-forge-gateway)
-**Direct gateway:** `imgforge.stackbilt.dev` (for API key / MCP access)
+**Gateway:** `https://imgforge.stackbilt.dev`
+**MCP Server:** `https://img-forge-mcp.blue-pine-edf6.workers.dev/mcp`
 
 ## Authentication
 
@@ -70,6 +67,7 @@ Submit a generation request. Returns immediately with a job ID (async) or waits 
 | `prompt` | string | Yes | — | Text description, 1–2000 characters |
 | `negative_prompt` | string | No | — | Things to exclude (effective on `draft` tier only) |
 | `quality_tier` | string | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
+| `seed` | integer | No | — | Seed for reproducible generation (0–2147483647). Cloudflare tiers only. |
 | `sync` | boolean | No | `false` | Wait for completion before responding |
 | `idempotency_key` | string | No | — | Deduplication key (24h TTL) |
 
@@ -96,6 +94,7 @@ curl -X POST https://imgforge.stackbilt.dev/v2/generate \
   "enhancement_logic": "...",
   "asset_url": null,
   "error": null,
+  "seed_used": null,
   "created_at": "2026-03-04T12:00:00.000Z",
   "completed_at": null
 }
@@ -122,6 +121,7 @@ Check the state of a generation job. Jobs are scoped to the authenticated tenant
   "enhancement_logic": "...",
   "asset_url": "/v2/assets/sha256hash",
   "error": null,
+  "seed_used": null,
   "created_at": "2026-03-04T12:00:00.000Z",
   "completed_at": "2026-03-04T12:00:08.000Z"
 }
@@ -151,13 +151,13 @@ Returns `{ "status": "ok", "version": "0.2.0" }`.
 
 ## Quality Tiers
 
-| Tier | Provider | Model | Negative Prompt | Default Size |
-|------|----------|-------|-----------------|--------------|
-| `draft` | Cloudflare AI | Stable Diffusion XL Lightning | Yes | 1024×1024 |
-| `standard` | Cloudflare AI | FLUX.2 Klein 4B | No | 1024×768 |
-| `premium` | Cloudflare AI | FLUX.2 Dev | No | 1024×768 |
-| `ultra` | Gemini | Gemini 2.5 Flash Image | No | 1024×1024 |
-| `ultra_plus` | Gemini | Gemini 3.1 Flash Image Preview | No | 1024×1024 |
+| Tier | Provider | Model | Negative Prompt | Seed | Default Size |
+|------|----------|-------|-----------------|------|--------------|
+| `draft` | Cloudflare AI | Stable Diffusion XL Lightning | Yes | Yes | 1024×1024 |
+| `standard` | Cloudflare AI | FLUX.2 Klein 4B | No | Yes | 1024×768 |
+| `premium` | Cloudflare AI | FLUX.2 Dev | No | Yes | 1024×768 |
+| `ultra` | Gemini | Gemini 2.5 Flash Image | No | No | 1024×1024 |
+| `ultra_plus` | Gemini | Gemini 3.1 Flash Image Preview | No | No | 1024×1024 |
 
 ## MCP Tools
 
@@ -188,6 +188,7 @@ Generate an image from a text prompt. Requires `generate` scope.
 | `prompt` | string | Yes | — | Text description, 1–2000 characters |
 | `quality_tier` | enum | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
 | `negative_prompt` | string | No | — | Exclusions (effective on `draft` tier only) |
+| `seed` | integer | No | — | Seed for reproducible generation (0–2147483647). Cloudflare tiers only. |
 
 The MCP tool always uses sync mode — it returns the completed image URL directly.
 
@@ -203,19 +204,15 @@ Check the status of a generation job. Requires `read` scope.
 |-----------|------|----------|-------------|
 | `job_id` | string (UUID) | Yes | The job ID to check |
 
-## Usage Limits
+## Rate Limits
 
-Image generation is included in Stackbilder plans. Limits are enforced via invisible quotas — no credits or per-image charges.
+| Auth Method | Quota | Period | Enforcement |
+|-------------|-------|--------|-------------|
+| Anonymous | 100 images | Calendar month | Per IP, via KV |
+| API key (free tier) | 100 images | Calendar month | Per tenant, via D1 entitlements |
+| OAuth / MCP (free tier) | 100 images | Calendar month | Per tenant, via D1 entitlements |
 
-| Plan | Monthly Images | Quality Tiers |
-|------|---------------|---------------|
-| Free | 5 | Draft through Premium |
-| Pro | 100 | All 5 tiers |
-| Team | Pooled | All 5 tiers |
-
-Anonymous access (no auth) is rate-limited to 100 images/month per IP.
-
-When quota is exceeded, the API returns `429`. A soft warning appears at 80% usage.
+When quota is exceeded, the API returns `429` with error code `QUOTA_EXCEEDED` (authenticated) or `RATE_LIMITED` (anonymous).
 
 ## Tenant Management
 

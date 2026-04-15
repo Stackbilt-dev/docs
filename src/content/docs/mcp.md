@@ -9,9 +9,9 @@ tag: "05"
 
 # MCP Integration
 
-Stackbilder exposes scaffold creation, image generation, and flow management as MCP-compliant tools. Connect MCP-compatible agents (Claude Code, Claude Desktop, custom agents) to generate governed codebases and images programmatically.
+StackBilt exposes its 6-mode architecture workflow as an MCP-compliant remote server. Connect MCP-compatible agents (Claude Code, Claude Desktop, custom agents) to run architecture flows programmatically.
 
-**Production endpoint:** `https://stackbilder.com/mcp` *(MCP gateway — routes to TarotScript, img-forge, and Stackbilder backends)*
+**Production endpoint:** `https://stackbilt.dev/mcp`
 
 **Protocol versions:** `2024-11-05` (SSE transport) · `2025-03-26` (Streamable HTTP transport)
 
@@ -27,9 +27,17 @@ MCP endpoints require authentication (except `GET /mcp/info`). Three methods, ch
 
 ### Unified Auth (Recommended)
 
-Sign in via OAuth at `stackbilder.com/login` (GitHub or Google). The session cookie authenticates all MCP requests automatically.
+Exchange an access key for a JWT that works at both StackBilt and Compass:
 
-For programmatic access, use API keys (`ea_*`, `sb_live_*`) issued through edge-auth.
+```bash
+curl -X POST https://stackbilt.dev/api/auth/token \
+  -H "X-Access-Key: ska_..." \
+  -H "Content-Type: application/json" \
+  -d '{"expires_in": 3600}'
+# Returns: { "access_token": "eyJ...", "token_type": "Bearer", "expires_in": 3600 }
+```
+
+One key, both services.
 
 ## Transport Options
 
@@ -57,7 +65,7 @@ For Streamable HTTP, sessions use the `Mcp-Session-Id` header:
 {
   "mcpServers": {
     "stackbilt": {
-      "url": "https://stackbilder.com/mcp",
+      "url": "https://stackbilt.dev/mcp",
       "transport": { "type": "streamable-http" },
       "headers": {
         "Authorization": "Bearer <YOUR_MCP_TOKEN>"
@@ -74,7 +82,7 @@ For Streamable HTTP, sessions use the `Mcp-Session-Id` header:
   "mcpServers": {
     "stackbilt": {
       "type": "sse",
-      "url": "https://stackbilder.com/mcp",
+      "url": "https://stackbilt.dev/mcp",
       "headers": {
         "Authorization": "Bearer <YOUR_MCP_TOKEN>"
       }
@@ -90,7 +98,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 
 const transport = new SSEClientTransport(
-  new URL("https://stackbilder.com/mcp"),
+  new URL("https://stackbilt.dev/mcp"),
   {
     requestInit: {
       headers: { "Authorization": "Bearer <YOUR_MCP_TOKEN>" }
@@ -107,7 +115,7 @@ const result = await client.callTool("runFullFlowAsync", {
 });
 ```
 
-## Native Tools (22)
+## All 22 Tools
 
 ### Flow Execution
 
@@ -150,12 +158,6 @@ const result = await client.callTool("runFullFlowAsync", {
 | `invalidateCache` | Clear cached mode artifacts so next run regenerates. |
 | `getGovernanceStatus` | Governance validation results, blessed patterns, persisted ADR IDs. |
 | `submitFeedback` | Submit bug reports, feature requests, and flow quality feedback. Params: `message` (string, required), `type` (enum: bug/feature/general/flow-quality), `rating` (number 1-5, optional), `flowId` (string, optional), `mode` (string, optional). |
-
-## Governance
-
-Governance output (threat analysis, ADRs, test plans) is generated automatically as part of the scaffold process — not via separate governance tools. The `.ai/` directory ships with every scaffold created through `scaffold_create` or the flow tools.
-
-For Team plans, shared governance policies can be configured via the settings page at `stackbilder.com/settings`.
 
 ## Recommended Agent Workflow
 
@@ -208,6 +210,77 @@ for (let i = 0; i < 6; i++) {
 }
 ```
 
+## Governance Integration
+
+Pass a `governance` config to validate architecture against blessed patterns:
+
+```typescript
+governance: {
+  mode: 'ENFORCED',          // PASSIVE | ADVISORY | ENFORCED
+  projectId: 'my-proj',      // scope to project patterns
+  autoPersist: true,          // record ADRs in governance ledger
+  persistTags: ['api', 'v2'],
+  qualityThreshold: 80,       // 0-100
+  transport: 'auto',          // external_http | service_binding | auto
+  transportCanaryPercent: 5   // canary rollout percentage
+}
+```
+
+| Mode | Behavior |
+|------|----------|
+| `PASSIVE` | Log only — never blocks |
+| `ADVISORY` | Warn on issues, flow continues |
+| `ENFORCED` | Block on FAIL, require remediation |
+
+Plan-tier caps: free plans are capped at PASSIVE, pro at ADVISORY, enterprise gets full ENFORCED.
+
+### Advanced Governance Sub-configs
+
+Three optional sub-configs extend the base governance object:
+
+**`domainLock`** — Locks domain entities after PRODUCT mode completes, preventing drift in downstream modes.
+
+```typescript
+governance: {
+  // ...base config...
+  domainLock: {
+    enabled: true,                        // Enable/disable domain locking
+    strictness: 'strict',                 // 'strict' | 'advisory' | 'off'
+    noNewEntities: true,                  // Prevent creation of new domain entities
+    allowVendors: ['stripe', 'sendgrid'], // Vendor allowlist
+    forbidVendors: ['twilio'],            // Vendor blocklist
+    requireTerms: ['Order', 'Customer'],  // Domain terms that must appear
+    forbidTerms: ['User', 'Account'],     // Domain terms that must not appear
+  }
+}
+```
+
+**`qualityByMode`** — Per-mode quality thresholds. Overrides the top-level `qualityThreshold` for specific execution modes, letting you enforce tighter standards on critical modes.
+
+```typescript
+governance: {
+  // ...base config...
+  qualityByMode: {
+    ARCHITECT: 90,
+    TDD: 85,
+    CODE: 80,
+  }
+}
+```
+
+**`qualityWeighting`** — Hybrid local/CSA weighting for quality evaluation. Controls the balance between local static analysis and Compass governance scoring when computing the final quality score.
+
+```typescript
+governance: {
+  // ...base config...
+  qualityWeighting: {
+    local: 0.4,   // Weight given to local analysis (0.0–1.0)
+    csa: 0.6,     // Weight given to Compass governance scoring (0.0–1.0)
+  }
+}
+```
+
+All three sub-configs are independent and can be combined freely within a single governance object.
 
 ## Error Handling
 
