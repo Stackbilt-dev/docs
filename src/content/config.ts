@@ -9,6 +9,11 @@ const docs = defineCollection({
     order: z.number(),
     color: z.string(),
     tag: z.string(),
+    // Wiki-as-SoT migration (Phase 2): optional metadata surfaced from
+    // AEGIS wiki when the page is synced from there. Used to render a
+    // "Verified <date>" stamp and a back-link to the wiki source.
+    lastVerified: z.string().optional(),
+    sourceSlug: z.string().optional(),
   }),
 });
 

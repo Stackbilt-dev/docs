@@ -1,0 +1,18 @@
+{
+  "$schema": "Phase 2 wiki-as-SoT publish manifest — AEGIS wiki slugs → Astro page metadata. Per wiki-as-docs-sot-migration AEGIS decision.",
+  "version": 4,
+  "contentDir": "src/content/docs",
+  "_note": "Phase 2 parallel: page filenames are explicit per entry and use a -from-wiki suffix so they land at top-level (e.g., mcp-from-wiki.md) and route at /mcp-from-wiki for side-by-side comparison with the legacy /mcp page. Astro treats __-prefixed dirs as private and skips them, which is why we don't put files in a __from-wiki/ subdir. After Phase 4 migration (legacy retired), drop the suffix and use the actual page filename.",
+  "source": "aegis-wiki",
+  "aegisBase": "https://aegis.stackbilt.dev",
+  "pages": [
+    {
+      "slug": "mcp-gateway-architecture",
+      "page": "mcp-from-wiki.md",
+      "section": "platform",
+      "order": 5,
+      "color": "#22d3ee",
+      "tag": "05"
+    }
+  ]
+}
