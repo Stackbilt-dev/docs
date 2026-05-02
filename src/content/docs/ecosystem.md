@@ -17,40 +17,61 @@ Stackbilder is built on multiple complementary tools that enforce governance acr
 |------|---------|------|
 | **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
 | **AEGIS** (`@stackbilt/aegis-core`) | Open source | Inter-agent orchestration framework and MCP-based task management |
-| **Stackbilder** | Commercial | Architecture generation, scaffold engine, structured artifacts |
-| **Compass** | Commercial | Governance policy brain, institutional memory, ADR ledger |
+| **Stackbilder** | Commercial | Unified platform on `stackbilder.com` — architecture generation, scaffold engine, Evidence Engine, Worker Observability, Consultations, img-forge |
 
-Charter and AEGIS are the open-source foundations. Stackbilder and Compass are commercial services.
+Charter and AEGIS are the open-source foundations. Stackbilder is the commercial platform that wraps them.
 
 ## Service Map
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| **StackBilt** | `stackbilt.dev` | Architecture generation, MCP server, scaffold engine |
-| **Compass** | via Stackbilder service binding | Governance enforcement, blessed patterns, ADR ledger |
-| **Auth Worker** | `auth-tenant-v2` | Authentication service (Better Auth + D1, OAuth, SSO) |
-| **img-forge** | `imgforge.stackbilt.dev` | AI image generation for documentation |
-| **Worker Observability** | `stackbilder.com/api/observe/*` | Hosted telemetry ingest + dashboard (Pro) — powered by `@stackbilt/worker-observability` |
+| **Stackbilder** | `stackbilder.com` | Unified platform Worker — UI, REST API, scaffold engine, governance, Evidence Engine, Observability |
+| **Auth** | `auth.stackbilt.dev` | Authentication service (Better Auth + D1, OAuth, SSO) — service binding from Stackbilder |
+| **img-forge** | `imgforge.stackbilt.dev` | Multi-provider image generation gateway — service binding from Stackbilder |
+| **MCP gateway** | `mcp.stackbilt.dev/mcp` | OAuth-authenticated MCP Worker that proxies to TarotScript / img-forge / Engine / Deployer. Sibling consumer of the platform's product workers (see [MCP Gateway](/mcp)) |
+| **Trust verifier** | `trust.stackbilder.com/evidence/:hash` | Public Evidence Engine receipt verifier (anti-probe semantics) |
 
 ## How They Fit Together
+
+```
+                                      ┌──────────────────────┐
+                                      │  AI agent / LM       │
+                                      │  (Claude Code, etc.) │
+                                      └──────────┬───────────┘
+                                                 │  OAuth + MCP
+                                                 ▼
+                                      ┌──────────────────────┐
+                                      │  mcp.stackbilt.dev   │
+   ┌─ human ─►─ stackbilder.com ──┐   │   (MCP gateway)      │
+   │              (web UI + API)  │   └──────────┬───────────┘
+   │                              │              │
+   │                              ▼              ▼
+   │                     ┌─────────────────────────────────────┐
+   │                     │  Backend product Workers            │
+   │                     │  ─ tarotscript-worker (scaffold)    │
+   │                     │  ─ img-forge-mcp                    │
+   │                     │  ─ stackbilt-engine (architecture)  │
+   │                     │  ─ stackbilt-deployer (CF deploy)   │
+   │                     │  ─ edge-auth (entitlements + quota) │
+   │                     └─────────────────────────────────────┘
+   │
+   └─ CLI ─►─ Charter (charter blast / surface) ──► same backends via API
+```
+
+A single user prompt — "build me an X" — flows through whichever consumer is closest:
 
 ```
 IDEA
   │
   ▼
-Compass: governance("Can we build X?")
-  │
-  ├── REJECTED ──► Stop
-  │
-  ▼ APPROVED
-Stackbilder: runFullFlowAsync(idea)
+runFullFlowAsync(idea)              ← invoked from web UI, MCP tool, or REST
   → PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT
+       │
+       └── inline governance: blessed-pattern enforcement,
+           red-team review, ADR persistence (Pro/Team tiers)
   │
   ▼
-Compass: red_team(architecture) → security review
-  │
-  ▼
-Stackbilder: getFlowScaffold(flowId) → deployable project
+getFlowScaffold(flowId) → deployable project
   │
   ▼
 Charter: validate + drift → commit and stack compliance
@@ -78,14 +99,19 @@ npx charter adf init    # scaffold .ai/ context directory
 For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/stackbilt-dev/charter-kit/blob/main/papers/context-as-code-v1.1.md).
 <!-- DOCSYNC:END:charter-oss-ecosystem -->
 
-## Stackbilder: Architecture + Scaffold
+## Stackbilder: Architecture + Scaffold + Trust
 
-The 6-mode pipeline (PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT) produces structured artifacts with cross-referenced IDs. After completion, the scaffold engine generates a deployable Cloudflare Workers project.
+The 6-mode pipeline (PRODUCT → UX → RISK → ARCHITECT → TDD → SPRINT) produces structured artifacts with cross-referenced IDs. After completion, the scaffold engine generates a deployable Cloudflare Workers project. On Pro/Team, additional capabilities run alongside the scaffold pipeline:
+
+- **Evidence Engine** — content E-E-A-T validation and tamper-evident receipts (`stackbilder.com/api/v1/evidence/*`, see [API Reference](/api-reference#evidence-engine))
+- **Worker Observability** — hosted telemetry ingest + dashboard
+- **Consultations** — CISO and CTO advisory flows backed by structured prompts and receipt-bound deliverables
+- **Inline governance** — blessed-pattern enforcement, red-team review, ADR persistence (replaces the previously-standalone Compass service binding)
 
 Available via:
-- **Browser UI** at [stackbilt.dev](https://stackbilt.dev) (interactive)
-- **MCP server** at `stackbilt.dev/mcp` (agent-driven, 22 tools)
-- **REST API** at `stackbilt.dev/api/flow/*` (direct HTTP)
+- **Browser UI** at [stackbilder.com](https://stackbilder.com) (interactive, human users)
+- **REST API** at `stackbilder.com/api/*` (direct HTTP — Charter CLI, server-to-server, CI; see [API Reference](/api-reference))
+- **MCP gateway** at `mcp.stackbilt.dev/mcp` (OAuth-authenticated agent access; routes scaffold/image/deploy tools to the same backend Workers — see [MCP Gateway](/mcp))
 
 ### Lightweight Agent Pattern
 
@@ -95,42 +121,24 @@ The recommended agent workflow downloads ~40KB total (down from 300KB+):
 runFullFlowAsync → getFlowSummary polls → getArtifact per mode → getFlowScaffold
 ```
 
-## Compass: Policy Brain
-
-For current Compass routes, auth endpoints, and MCP integration surfaces, see [Compass Governance API](/compass-governance-api).
-
-Compass is an AI governance agent with institutional memory — a ledger of ADRs, blessed patterns, and constitutional rules. It validates architecture decisions, runs red-team reviews, and drafts formal policy documents.
-
 ### Governance Modes by Plan
 
 | Plan | Max Mode | Behavior |
 |------|----------|----------|
 | Free | `PASSIVE` | Log only — never blocks |
 | Pro | `ADVISORY` | Warn on issues, flow continues |
-| Enterprise | `ENFORCED` | Block on FAIL, require remediation |
+| Team | `ENFORCED` | Block on FAIL, require remediation |
 
 When governance mode is capped by plan tier, a soft upsell prompt appears in the `governanceState` response.
 
 ### Blessed Patterns
 
-Compass maintains a ledger of approved technology patterns. These are injected into Stackbilder's ARCHITECT prompt automatically when governance is enabled. Example:
+The platform maintains a ledger of approved technology patterns. These are injected into the ARCHITECT prompt automatically when governance is enabled. Example:
 
 - Compute: Cloudflare Workers (not AWS Lambda)
 - Database: Cloudflare D1 (not PostgreSQL)
 - Cache: Cloudflare KV (not Redis)
 - Queue: Cloudflare Queues (not SQS)
-
-### CSA Transport Modes
-
-Communication between Stackbilder and Compass supports multiple transports:
-
-| Transport | Description |
-|-----------|-------------|
-| `external_http` | Public HTTPS MCP endpoint (default) |
-| `service_binding` | Internal Worker binding (when configured) |
-| `auto` | Canary split between HTTP and binding |
-
-Canary rollout percentage is configurable per-flow or via environment default.
 
 ## Worker Observability: ODD-Driven Monitoring
 
@@ -172,37 +180,20 @@ const obs = createMonitoring({
 
 Every significant decision flows through governance before implementation:
 
-1. **Pre-approval** — Compass validates the idea against policy
-2. **Architecture** — Stackbilder generates a governed blueprint with blessed patterns
-3. **Review** — Compass red-teams the architecture output
+1. **Pre-approval** — Stackbilder validates the idea against policy during the PRODUCT/RISK modes
+2. **Architecture** — Stackbilder generates a governed blueprint with blessed patterns injected into ARCHITECT
+3. **Review** — Inline red-team review runs against the architecture output
 4. **Record** — ADRs are persisted to the governance ledger (when `autoPersist: true`)
 5. **Scaffold** — Stackbilder generates deployable project files
 6. **Commit** — Charter enforces `Governed-By:` trailer compliance at the repo level
 7. **Evidence** — Charter validates ADF metric ceilings (`adf evidence --auto-measure --ci`)
 8. **CI** — Charter blocks merges on drift violations or metric ceiling breaches
 
-## Authentication Across Services
+## Authentication
 
-### Unified Auth (Recommended)
+Stackbilder issues two credential types, both accepted at every endpoint:
 
-One access key works at both Stackbilder and Compass:
+- **Session cookie** — `better-auth.session_token`, set during OAuth sign-in (GitHub, Google) at [auth.stackbilt.dev](https://auth.stackbilt.dev). Used by the browser UI.
+- **API key** — `Authorization: Bearer ea_*`, issued from `/settings`. Used by Charter CLI, server-to-server pipelines, and MCP-style consumers.
 
-```bash
-# Exchange ska_ key for a JWT
-curl -X POST https://stackbilt.dev/api/auth/token \
-  -H "X-Access-Key: ska_..." \
-  -d '{"expires_in": 3600}'
-# Use the returned JWT at either service
-```
-
-### Service-to-Service
-
-For automated pipelines, each service has its own token:
-
-```json
-{
-  "edgestack": { "url": "https://stackbilt.dev/mcp", "token": "EDGESTACK_MCP_TOKEN" },
-  "compass": { "url": "https://stackbilt.dev/mcp", "transport": "service_binding", "token": "CSA_MCP_TOKEN" },
-  "imgforge": { "url": "https://imgforge.stackbilt.dev/mcp", "token": "IMGFORGE_MCP_TOKEN" }
-}
-```
+API key resolution: `GET /api/account/me` returns the caller's identity (userId, orgId, plan) — useful for tier-aware routing in CI scripts.

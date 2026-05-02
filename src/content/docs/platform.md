@@ -67,7 +67,7 @@ Scaffolds include `scaffoldHints` (template classification + confidence score) a
 
 ## Governance Integration
 
-When running a governed flow, architecture decisions are validated against blessed patterns via Compass. Violations are flagged depending on governance mode.
+Governance is embedded directly in the scaffold pipeline rather than a separate service binding. Architecture decisions are validated against blessed patterns inline as each mode runs; violations are flagged depending on governance mode.
 
 | Mode | Behavior | Plan Tier |
 |------|----------|-----------|
@@ -75,17 +75,14 @@ When running a governed flow, architecture decisions are validated against bless
 | `ADVISORY` | Warn on issues, flow continues | Pro |
 | `ENFORCED` | Block on FAIL, require remediation | Team |
 
-Blessed patterns from Compass are injected into the ARCHITECT mode prompt automatically. Governance results (validations, persisted ADR IDs, warnings) are available via `getGovernanceStatus`.
+Blessed-pattern enforcement runs as part of the ARCHITECT mode. Governance results (validations, persisted ADR IDs, warnings) are available via `getGovernanceStatus` on the flow response.
 
 ### Advanced Governance Configurations
-
-For Compass route taxonomy and auth/MCP endpoints, see [Compass Governance API](/compass-governance-api).
 
 Team plans unlock additional governance options:
 
 - **Domain Locking** (`domainLock`) — Locks domain entities after PRODUCT mode to prevent drift. Supports strictness levels, entity creation controls, and vendor allow/block lists.
 - **Per-Mode Quality Thresholds** (`qualityByMode`) — Set different minimum quality scores per execution mode.
-- **Quality Weighting** (`qualityWeighting`) — Hybrid local/CSA weighting for quality evaluation.
 
 ## Plan Tiers & Quotas
 
@@ -99,8 +96,6 @@ Every account is associated with a plan tier that determines rate limits and fea
 ## AI Model Routing
 
 The platform applies a model policy per request. Provider/model selection is tier-aware. Phase 1 scaffolds use deterministic TarotScript (no LLM). Phase 2 (Pro/Team) adds an LLM polish pass via Cerebras.
-
-<!-- TODO: verify current model routing table against edgestack-v2 config -->
 
 ## Output Artifacts
 
@@ -117,8 +112,8 @@ Each completed flow produces:
 
 ## Access
 
-Access Stackbilder via:
+Access Stackbilder via three sibling consumers — same backends, different transports:
 
-- **Browser UI** at [stackbilder.com](https://stackbilder.com) — interactive flow builder
-- **MCP Server** — programmatic agent-driven workflows (see [MCP Integration](/mcp))
-- **REST API** at `api.stackbilt.dev` — direct HTTP integration (see [API Reference](/api-reference))
+- **Browser UI** at [stackbilder.com](https://stackbilder.com) — interactive flow builder for human users
+- **REST API** at `stackbilder.com/api/*` — direct HTTP integration (Charter CLI, server-to-server, CI; see [API Reference](/api-reference)). Same Worker serves both the UI and the API.
+- **MCP gateway** at `mcp.stackbilt.dev/mcp` — OAuth-authenticated MCP Worker for AI agents (Claude Code, Claude Desktop, custom MCP clients). Sibling deployable that proxies to the same backend product workers (TarotScript, img-forge, stackbilt-engine, stackbilt-deployer). See [MCP Gateway](/mcp).
