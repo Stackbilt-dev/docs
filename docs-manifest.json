@@ -1,6 +1,6 @@
 {
   "$schema": "Stackbilt docs sync manifest — maps product repos to doc site pages",
-  "version": 2,
+  "version": 3,
   "contentDir": "src/content/docs",
   "org": "Stackbilt-dev",
   "sources": {
@@ -27,6 +27,13 @@
           "color": "#f472b6",
           "tag": "04"
         },
+        "mcp.md": {
+          "source": "docs/mcp.md",
+          "section": "platform",
+          "order": 5,
+          "color": "#22d3ee",
+          "tag": "05"
+        },
         "api-reference.md": {
           "source": "docs/api-reference.md",
           "section": "platform",
@@ -40,25 +47,6 @@
           "order": 6,
           "color": "#c084fc",
           "tag": "06"
-        }
-      }
-    },
-    "edgestack-legacy": {
-      "repo": "edgestack_v2",
-      "pages": {
-        "mcp.md": {
-          "source": "docs/mcp.md",
-          "section": "platform",
-          "order": 5,
-          "color": "#22d3ee",
-          "tag": "05"
-        },
-        "compass-governance-api.md": {
-          "source": "docs/compass-governance-api.md",
-          "section": "platform",
-          "order": 8,
-          "color": "#22d3ee",
-          "tag": "08"
         }
       }
     },
