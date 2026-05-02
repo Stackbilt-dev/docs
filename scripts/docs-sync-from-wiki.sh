@@ -126,11 +126,22 @@ print(page.get('body', ''))
   last_verified=$(echo "$parsed" | sed -n '/^---LAST_VERIFIED---$/,/^---BODY---$/p' | sed '1d;$d')
   page_body=$(echo "$parsed" | sed -n '/^---BODY---$/,$p' | sed '1d')
 
+  # Truncate summary to ~280 chars at a word boundary so frontmatter
+  # `description` doesn't end mid-word (PR #22 review surfaced "stackbilde"
+  # cut from "stackbilder.com"). Adds ellipsis when truncation occurs.
+  description=$(printf '%s' "$summary" | python3 -c "
+import sys
+s = sys.stdin.read().strip().replace('\n', ' ').replace('\"', '\\\\\"')
+if len(s) > 280:
+    s = s[:280].rsplit(' ', 1)[0].rstrip(',.;:') + '…'
+print(s)
+")
+
   # Build Astro frontmatter from wiki metadata + manifest cosmetics
   frontmatter=$(cat <<FRONTMATTER
 ---
 title: "$(echo "$title" | sed 's/"/\\"/g')"
-description: "$(echo "$summary" | head -c 280 | sed 's/"/\\"/g' | tr '\n' ' ')"
+description: "$description"
 section: "$section"
 order: $order
 color: "$color"

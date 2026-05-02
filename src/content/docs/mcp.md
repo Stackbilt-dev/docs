@@ -1,6 +1,6 @@
 ---
 title: "MCP Gateway — Upstream/Downstream Architecture"
-description: "Architecture map for Stackbilt-dev/stackbilt-mcp-gateway — the OAuth-authenticated Cloudflare Worker at mcp.stackbilt.dev/mcp that exposes the platform's product workers as a single MCP-compliant remote server. Sibling consumer of the same backend service bindings as stackbilde"
+description: "Architecture map for Stackbilt-dev/stackbilt-mcp-gateway — the OAuth-authenticated Cloudflare Worker at mcp.stackbilt.dev/mcp that exposes the platform's product workers as a single MCP-compliant remote server. Sibling consumer of the same backend service bindings as…"
 section: "platform"
 order: 5
 color: "#22d3ee"
