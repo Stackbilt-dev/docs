@@ -237,8 +237,12 @@ ${generated}"
   if [[ "$has_frontmatter" == "false" ]]; then
     existing="${CONTENT_DIR}/${page_key}"
     if [[ -f "$existing" ]]; then
-      # Extract existing frontmatter and prepend to new content
-      existing_fm=$(sed -n '/^---$/,/^---$/p' "$existing")
+      # Extract existing frontmatter (first --- block only) and prepend.
+      # awk single-state-machine: include lines starting with the first
+      # --- and stop after the second one. Robust against bodies that
+      # use ^---$ as markdown horizontal-rule separators (would otherwise
+      # double on each sync — see docs#19).
+      existing_fm=$(awk '/^---$/{n++; print; if(n==2)exit} n==1 && !/^---$/{print}' "$existing")
       content="${existing_fm}
 
 ${content}"
