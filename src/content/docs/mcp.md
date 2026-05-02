@@ -1,50 +1,82 @@
 ---
-title: "MCP Integration"
-description: "Connect AI agents to Stackbilder via Model Context Protocol. Scaffold tools, image generation, and flow management through a unified MCP server."
+title: "MCP Gateway — Upstream/Downstream Architecture"
+description: "Architecture map for Stackbilt-dev/stackbilt-mcp-gateway — the OAuth-authenticated Cloudflare Worker at mcp.stackbilt.dev/mcp that exposes the platform's product workers as a single MCP-compliant remote server. Sibling consumer of the same backend service bindings as stackbilde"
 section: "platform"
 order: 5
 color: "#22d3ee"
 tag: "05"
+lastVerified: "2026-05-02"
+sourceSlug: "mcp-gateway-architecture"
 ---
 
-# MCP Gateway
+## What this is
 
-The Stackbilder platform exposes its product workers (scaffold engine, image generation, deployer) as a single MCP-compliant remote server. AI agents (Claude Code, Claude Desktop, custom MCP clients) connect once and gain access to multiple Stackbilt product workers through one OAuth-authenticated endpoint.
+The **Stackbilt MCP Gateway** is a Cloudflare Worker that exposes the platform's product backends as a single MCP-compliant remote server, OAuth-authenticated. It's the third leg of Stackbilder's three-consumer fractal: the same backend service bindings power the web UI on `stackbilder.com`, the Charter CLI, and the gateway. The gateway exists so MCP-native agents (Claude Code, Claude Desktop, custom MCP clients) get a single OAuth endpoint without taking a dependency on the web UI's session model.
 
-**Production endpoint:** `https://mcp.stackbilt.dev/mcp`
+**Endpoint:** `https://mcp.stackbilt.dev/mcp`
 
-**Repo:** [`Stackbilt-dev/stackbilt-mcp-gateway`](https://github.com/Stackbilt-dev/stackbilt-mcp-gateway) — Cloudflare Worker built on `@modelcontextprotocol/sdk` and `@cloudflare/workers-oauth-provider`.
+**Repo:** `Stackbilt-dev/stackbilt-mcp-gateway`
 
-**MCP Registry:** Listed at [`registry.modelcontextprotocol.io`](https://registry.modelcontextprotocol.io/v0.1/servers?search=stackbilt).
+**Stack:** Cloudflare Worker built on `@modelcontextprotocol/sdk` and `@cloudflare/workers-oauth-provider`. Listed on the official MCP registry at `registry.modelcontextprotocol.io`.
 
-## Why a separate Worker
+## Topology
 
-The MCP gateway is a **sibling consumer** of the same backend product workers that power `stackbilder.com`. It is not a feature *of* `stackbilder.com` — it is its own deployable, with its own auth, its own KV namespace, and its own rate limiting. This matches the [two-consumer fractal](https://github.com/Stackbilt-dev/stackbilt-web/blob/main/CLAUDE.md): every product surface should work for both human users (via the web UI) and LM agents (via MCP / API key / CLI). The gateway exists so MCP-native agents have a single OAuth endpoint without taking a dependency on the web UI's session model.
+```
+                          ┌────────────────────────┐
+                          │  AI agent / LM       │
+                          │  Claude Code,        │
+                          │  Claude Desktop,     │
+                          │  custom MCP clients  │
+                          └──────────┬───────────┘
+                                     │ OAuth + MCP (Streamable HTTP / SSE)
+                                     ▼
+                          ┌────────────────────────┐
+                          │  mcp.stackbilt.dev   │
+                          │  (gateway Worker)    │
+                          └──────────┬───────────┘
+                                     │ Service Bindings (in-colo, no HTTP)
+                                     ▼
+        ┌──────────────────────────────────────────┐
+        │  Backend product Workers (shared by all consumers) │
+        │   │                                                 │
+        │   ├─ edge-auth         (AUTH_SERVICE)               │
+        │   ├─ tarotscript-worker (TAROTSCRIPT, scaffold_*)    │
+        │   ├─ img-forge-mcp     (IMG_FORGE,    image_*)      │
+        │   ├─ stackbilt-engine  (ENGINE,       arch flows)   │
+        │   └─ stackbilt-deployer (DEPLOYER,    CF deploy)    │
+        └──────────────────────────────────────────┘
+                                     ▲
+                                     │ Service Bindings (parallel sibling consumers)
+        ┌──────────────────────────┐      ┌────────────────────┐
+        │  stackbilder.com         │      │  Charter CLI       │
+        │  (web UI + REST API)     │      │  (charter blast,   │
+        │  human users +           │      │   charter surface) │
+        │  ea_* API key callers    │      │  CI / local dev    │
+        └──────────────────────────┘      └────────────────────┘
+```
 
-## Architecture — what the gateway routes to
+**Key invariant:** the gateway and `stackbilder.com` are siblings, not parent/child. Both are CF Workers; both hold parallel service bindings to the same backend product workers; both route through `edge-auth` for entitlements + quota. A tenant's Pro tier is consistent across whichever consumer they use.
 
-The gateway holds Cloudflare Service Bindings to each product Worker; tool calls are routed to the appropriate backend by the gateway's tool registry.
+## Service-binding map
 
-| Backend Worker | Service binding | Tool prefix | Purpose |
+Authoritative source: `Stackbilt-dev/stackbilt-mcp-gateway/wrangler.toml`.
+
+| Binding | Backend Worker | Tool prefix on the gateway | What it routes |
 |---|---|---|---|
-| **edge-auth** | `AUTH_SERVICE` | (used internally) | Tenant resolution, API-key validation, OAuth grant storage |
-| **tarotscript-worker** | `TAROTSCRIPT` | `scaffold_*` | Deterministic project scaffolding, classification, GitHub publishing |
-| **img-forge-mcp** | `IMG_FORGE` | `image_*` | AI image generation (multi-provider, multi-tier) |
-| **stackbilt-engine** | `ENGINE` | (architecture flows) | Architecture mode pipeline (PRODUCT → SPRINT) |
-| **stackbilt-deployer** | `DEPLOYER` | (deploy flows) | Cloudflare Workers deployment, D1 provisioning, DNS via API |
-
-Token billing, quota reservation, and rate limiting all flow through `AUTH_SERVICE` — the same edge-auth surface used by `stackbilder.com`. A tenant's Pro tier on the web UI is the same Pro tier when calling tools through the gateway.
+| `AUTH_SERVICE` | `edge-auth` (entrypoint `AuthEntrypoint`) | (used internally) | Tenant resolution, API-key validation, OAuth grant storage in OAUTH_KV, entitlement checks, quota reservation |
+| `TAROTSCRIPT` | `tarotscript-worker` | `scaffold_*` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment hand-off |
+| `IMG_FORGE` | `img-forge-mcp` | `image_*` | AI image generation (multi-provider, multi-tier) |
+| `ENGINE` | `stackbilt-engine` | (architecture flows) | Architecture mode pipeline (PRODUCT → SPRINT) — distinct from `tarotscript-worker`'s scaffold path |
+| `DEPLOYER` | `stackbilt-deployer` | (deploy flows) | Cloudflare Workers deployment, D1 provisioning, DNS via API |
 
 ## Authentication
 
-Two methods, in order of preference:
-
-| Method | Header | Notes |
+| Method | Header | Use case |
 |---|---|---|
-| OAuth 2.1 + PKCE | `Authorization: Bearer <oauth-access-token>` | Issued via `@cloudflare/workers-oauth-provider`. Recommended for end-user agent connections (Claude Desktop, Claude Code). |
+| OAuth 2.1 + PKCE | `Authorization: Bearer <oauth-access-token>` | Recommended for end-user agent connections (Claude Desktop, Claude Code). Issued via `@cloudflare/workers-oauth-provider`. Tokens stored in `OAUTH_KV`. |
 | Static Bearer | `Authorization: Bearer <STACKBILT_MCP_TOKEN>` | Server-to-server / CI integrations. |
 
-API keys (`ea_*`) issued from `stackbilder.com/settings` are accepted at the platform's REST API but are *not* the canonical credential for the MCP gateway. Use OAuth for human-in-the-loop agent flows.
+The gateway intentionally does **not** accept `ea_*` API keys (those are issued from `stackbilder.com/settings` for the platform's REST API). Agent flows go through OAuth so the user can grant scoped consent.
 
 ## Transports
 
@@ -54,64 +86,52 @@ API keys (`ea_*`) issued from `stackbilder.com/settings` are accepted at the pla
 | **SSE Stream** | `/mcp` | GET | Server-pushed events, session-based |
 | **Server Info** | `/mcp/info` | GET | Capabilities discovery (no auth required) |
 
-Streamable HTTP sessions use the `Mcp-Session-Id` header — the first `initialize` request returns a session ID; include it on subsequent requests; `DELETE /mcp` with the session ID to terminate.
+Streamable HTTP sessions use the `Mcp-Session-Id` header. First `initialize` request returns a session ID; include it on subsequent requests; `DELETE /mcp` with the session ID to terminate.
 
-## Client configuration
+## Tool catalog state
 
-### Claude Code / Claude Desktop
+The gateway's tool surface is **migrating** at the time of this writing:
 
-```json
-{
-  "mcpServers": {
-    "stackbilt": {
-      "url": "https://mcp.stackbilt.dev/mcp",
-      "transport": { "type": "streamable-http" }
-    }
-  }
-}
-```
+- Legacy `flow_*` tools (architecture mode pipeline) — still bound, but the gateway repo's README marks them DEPRECATED and they're being replaced by deterministic `scaffold_*` tools (TarotScript-backed).
+- `scaffold_*` tools — the canonical replacement for `flow_*`. Faster (~20ms structure, ~2s with oracle prose), no LLM calls for file generation.
+- `image_*` tools — stable, route through `img-forge-mcp`.
 
-OAuth flow runs on first connection; the Worker handles `/.well-known/oauth-authorization-server` discovery and the standard authorization-code + PKCE exchange.
+For the live tool catalog, query `tools/list` against the gateway directly, or read the gateway repo README. Do **not** treat any frozen tool listing as authoritative — the surface is in flux.
 
-### Custom MCP client (Node.js)
+## Documentation surface
 
-```typescript
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+The canonical platform-side reference for the gateway is `Stackbilt-dev/stackbilt-web/docs/mcp.md` (rendered at `docs.stackbilt.dev/mcp`). The docs site sources this page from `stackbilt-web` per `docs-manifest.json` v3 (`Stackbilt-dev/docs@2bcd7cc`). The gateway repo's own `docs/mcp.md` is currently stale (still describes the decommissioned `stackbilt.dev/mcp` endpoint with Compass JWT auth and the deprecated `flow_*` tool catalog as canonical) — left for the gateway team to refresh.
 
-const transport = new StreamableHTTPClientTransport(
-  new URL("https://mcp.stackbilt.dev/mcp")
-);
+## What was deprecated
 
-const client = new Client({ name: "my-agent", version: "1.0.0" });
-await client.connect(transport);
+This architecture replaces an earlier topology where:
 
-const tools = await client.listTools();
-```
+- The gateway lived behind `stackbilt.dev/mcp` (the `stackbilt.dev` domain now 301-redirects to `stackbilder.com`; `stackbilder.com/mcp/info` returns 404)
+- A third auth method, **Compass JWT**, was accepted (Compass was removed as a standalone product per `stackbilt-web/CLAUDE.md`; its governance logic is being absorbed into `stackbilt-engine`)
+- A separate **Compass Service Adapter (CSA)** transport mode existed for routing inside the platform (no longer relevant)
+- Cross-Compass unified-auth via `stackbilt.dev/api/auth/token` (endpoint dead)
 
-## Tool catalog
+The `Stackbilt-dev/edgestack_v2` repo, which previously hosted the canonical `mcp.md` doc on its way to the docs site, is deprecated for documentation purposes and excluded from `docs-manifest.json` v3.
 
-The gateway's tool surface is migrating: legacy `flow_*` tools (architecture pipeline) are being superseded by the deterministic `scaffold_*` family backed by TarotScript. For the live tool catalog, query `tools/list` against the gateway directly, or read the [gateway repo README](https://github.com/Stackbilt-dev/stackbilt-mcp-gateway/blob/main/README.md) for the current binding map and tool descriptions. Per-tool docs live in the gateway repo's `docs/` directory.
+## Two-consumer fractal in concrete form
 
-## Error handling
+The `feedback_two_consumer_fractal` memory describes the principle: "Every product surface must work for both Human users AND LM agents. UI is one consumer of the API; MCP gateway + Charter CLI are siblings." The MCP gateway is the concrete instance:
 
-All errors follow JSON-RPC 2.0 format:
+- Same backend product Workers as `stackbilder.com`
+- Same `AUTH_SERVICE` for entitlements
+- Same quota model
+- Different transport (MCP), different auth (OAuth), different consumer (LM agents)
 
-| Code | Meaning |
-|---|---|
-| `-32700` | Parse error (invalid JSON) |
-| `-32600` | Invalid request |
-| `-32601` | Method not found |
-| `-32602` | Invalid params (unknown tool) |
-| `-32000` | Tool execution failed |
-| `-32001` | Unauthorized (token invalid or expired) |
+A new feature lands by adding a route on `stackbilder.com` (the canonical contract); the gateway gains parity by exposing it as an MCP tool that calls the same backend service binding. The web UI is the human surface; the gateway is the agent surface.
 
-## Observability
+## Authority
 
-Every gateway tool call emits a row to the platform's audit log via `AUTH_SERVICE`. Token billing and rate-limit events flow through the same edge-auth surface as the REST API, so a tenant's quota usage on `stackbilder.com` and via the MCP gateway are consolidated into one entitlement.
+- **Gateway repo:** `Stackbilt-dev/stackbilt-mcp-gateway`
+- **Wrangler config (binding map):** `Stackbilt-dev/stackbilt-mcp-gateway/wrangler.toml`
+- **Public registry:** `registry.modelcontextprotocol.io` (search: `stackbilt`)
+- **Docs site page:** `https://docs.stackbilt.dev/mcp`
+- **Canonical platform-side reference:** `Stackbilt-dev/stackbilt-web/docs/mcp.md`
+- **Manifest pointing here:** `Stackbilt-dev/docs/docs-manifest.json` v3
+- **Two-consumer fractal principle:** memory `feedback_two_consumer_fractal`
 
-## See also
-
-- [API Reference](/api-reference) — REST API surface on `stackbilder.com/api/*` (the same backends are reachable via direct HTTP)
-- [Ecosystem](/ecosystem) — how the gateway sits alongside the web UI and Charter CLI as siblings of the platform API
-- [Platform](/platform) — the scaffold pipeline the gateway proxies into
+When any of these contracts change shape (new service binding, new tool catalog, auth model change, transport addition, gateway URL change), update both the code and this page. Advance `last_verified`.

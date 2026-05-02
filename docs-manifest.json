@@ -27,13 +27,6 @@
           "color": "#f472b6",
           "tag": "04"
         },
-        "mcp.md": {
-          "source": "docs/mcp.md",
-          "section": "platform",
-          "order": 5,
-          "color": "#22d3ee",
-          "tag": "05"
-        },
         "api-reference.md": {
           "source": "docs/api-reference.md",
           "section": "platform",

@@ -103,11 +103,14 @@ while IFS=$'\t' read -r slug page section order color tag; do
     continue
   fi
 
-  # Parse JSON: extract title, summary, body, last_verified
+  # Parse JSON: extract title, summary, body, last_verified.
+  # Tolerate either response shape:
+  #   { page: { title, ... } }  — original aegis#582 spec
+  #   { title, ... }             — aegis-daemon v2.10.6 actually returns the page directly
   parsed=$(echo "$body" | python3 -c "
 import json, sys
 data = json.load(sys.stdin)
-page = data.get('page', {})
+page = data.get('page', data) if isinstance(data, dict) else {}
 print('---TITLE---')
 print(page.get('title', ''))
 print('---SUMMARY---')
