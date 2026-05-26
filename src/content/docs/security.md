@@ -9,7 +9,7 @@ tag: "09"
 
 # Security
 
-> **Policy status:** Adopted 2026-03-27, updated 2026-03-31. Applies to all repositories under the Stackbilt-dev organization.
+> **Policy status:** Adopted 2026-03-27, updated 2026-05-26. Applies to all repositories under the Stackbilt-dev organization.
 
 ## Architecture: Edge-First Zero Trust
 
@@ -87,6 +87,83 @@ Stackbilt operates autonomous AI agents for code generation, testing, and infras
 3. **Blast radius containment:** Every autonomous task runs on an isolated branch (`auto/{category}/{task-id}`). Integration happens only through reviewed pull requests. Concurrent task limits (5 per repo, 8 per day) prevent merge conflict storms.
 4. **Authority levels:** Tasks are classified as `operator` (full access), `auto_safe` (docs/tests/research — PR is the approval gate), or `proposed` (requires human approval before execution).
 5. **Churn detection:** Self-improvement tasks are blocked from re-touching files modified by other autonomous tasks within the last 14 days, preventing oscillation loops.
+
+## Content Provenance & Audit Chain
+
+Shipped in v2.14.0. The Content Provenance API validates AI-generated or AI-assisted content against E-E-A-T criteria and produces a cryptographically-linked audit receipt. Because each record hashes the one before it, no receipt can be silently altered after the fact — tampering with any record also invalidates every record downstream of it in the chain.
+
+### EEAT Validation
+
+`POST /api/provenance/validate`  
+Auth: `Authorization: Bearer <AEGIS_TOKEN>`
+
+```json
+{
+  "content": "string | ContentInput"
+}
+```
+
+Response:
+
+```json
+{
+  "validation": {
+    "hasGaps": false,
+    "gapCount": 0,
+    "gaps": [],
+    "policyVersion": "google_november_2024_reputation",
+    "policyName": "Google November 2024 Site Reputation Abuse",
+    "suggestions": []
+  },
+  "audit_record_id": "550e8400-e29b-41d4-a716-446655440000",
+  "chain_head": "a3f2c1..."
+}
+```
+
+Validation checks four pillars across thirteen requirements:
+
+| Pillar | Requirements checked |
+|--------|----------------------|
+| **Experience** | Case studies, original visuals, first-hand evidence statements |
+| **Expertise** | Citations from authoritative sources, data points, unique insights |
+| **Authoritativeness** | Author byline, author bio, external validation, editorial process |
+| **Trustworthiness** | Last-updated date, AI usage disclosure, source attribution |
+
+Three policy presets are available:
+
+| Preset | Description |
+|--------|-------------|
+| `google_baseline_2023` | Pre-2024 update baseline. Minimal AI disclosure requirement. |
+| `google_march_2024_core` | Stricter: AI disclosure required, higher data-point threshold, external validation required. |
+| `google_november_2024_reputation` | **Default.** Adds editorial-process documentation to the March 2024 requirements. |
+
+Each gap returned includes severity (`low` / `medium` / `high` / `critical`), a count of what was found versus what was needed, and actionable examples for remediation.
+
+### Audit Receipt
+
+Every validation writes an immutable `AuditRecord` to a hash-chained log:
+
+```
+hash = SHA-256(prev_hash_bytes ‖ serialized_record_bytes)
+```
+
+The first record in each namespace uses a genesis sentinel (`0000...` × 64) as its `prev_hash`. Storage is split across two layers:
+
+- **R2 (source of truth):** Full records stored as immutable objects. Payload and metadata are retained in full.
+- **D1 (queryable index):** Record headers, hashes, and payload summaries indexed for filtering by namespace, event type, actor, or time range.
+
+Multiple audit chains can coexist under isolated namespaces. Content validation records are written to the `content-validation` namespace.
+
+Chain integrity can be verified at any time. A `VerificationResult` reports the total record count, whether every hash link is valid, and the first record where the chain breaks (if any).
+
+Receipts can be independently verified at `trust.stackbilder.com/evidence/:hash`.
+
+### Open-Source Libraries
+
+The validation and audit layers are backed by two Apache-2.0 libraries, both available on npm:
+
+- **[`@stackbilt/evidence-core`](https://www.npmjs.com/package/@stackbilt/evidence-core) v0.1.0** — EEAT gap detection and scoring. Policy presets, pillar validators, and suggestion generation. Usable standalone, outside the AEGIS platform.
+- **[`@stackbilt/audit-chain`](https://www.npmjs.com/package/@stackbilt/audit-chain) v0.1.0** — Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1 backend). Not specific to content validation — any event type can be written to any namespace.
 
 ## Reporting a Vulnerability
 
