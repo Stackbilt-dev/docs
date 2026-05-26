@@ -16,8 +16,11 @@ Stackbilder is built on multiple complementary tools that enforce governance acr
 | Tool | License | Role |
 |------|---------|------|
 | **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
-| **AEGIS** (`@stackbilt/aegis-core`) | Open source | Inter-agent orchestration framework and MCP-based task management |
-| **Stackbilder** | Commercial | Unified platform on `stackbilder.com` — architecture generation, scaffold engine, Evidence Engine, Worker Observability, Consultations, img-forge |
+| **AEGIS** (`@stackbilt/aegis-core`) | Apache-2.0 (open source) | Inter-agent orchestration framework and MCP-based task management |
+| **evidence-core** (`@stackbilt/evidence-core`) | Apache-2.0 (open source) | E-E-A-T gap detection and scoring library. Three policy presets (Google Nov 2024 default). Usable standalone. |
+| **audit-chain** (`@stackbilt/audit-chain`) | Apache-2.0 (open source) | Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1). SHA-256 hash-chained records. |
+| **worker-observability** (`@stackbilt/worker-observability`) | Apache-2.0 (open source) | ODD-driven telemetry SDK for Cloudflare Workers. Metrics, traces, spans, SLI/SLO. |
+| **Stackbilder** | Commercial | Unified platform on `stackbilder.com` — architecture generation, scaffold engine, Evidence Engine, Content Provenance, Worker Observability, Consultations, img-forge |
 
 Charter and AEGIS are the open-source foundations. Stackbilder is the commercial platform that wraps them.
 
