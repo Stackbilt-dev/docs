@@ -83,10 +83,10 @@ The gateway intentionally does **not** accept `ea_*` API keys (those are issued 
 | Transport | Endpoint | Method | Use Case |
 |---|---|---|---|
 | **Streamable HTTP** | `/mcp` | POST | Modern MCP clients, single request/response |
-| **SSE Stream** | `/mcp` | GET | Server-pushed events, session-based |
-| **Server Info** | `/mcp/info` | GET | Capabilities discovery (no auth required) |
+| **SSE Stream** | `/mcp` | GET | Server-pushed events, session-based (requires auth + `MCP-Session-Id`) |
+| **Session teardown** | `/mcp` | DELETE | Terminate a session |
 
-Streamable HTTP sessions use the `Mcp-Session-Id` header. First `initialize` request returns a session ID; include it on subsequent requests; `DELETE /mcp` with the session ID to terminate.
+Streamable HTTP sessions use the `Mcp-Session-Id` header. The first `initialize` POST returns a session ID; include it on subsequent requests; `DELETE /mcp` with the session ID to terminate. Capability negotiation happens via the standard MCP `initialize` message over POST — there is no separate unauthenticated info endpoint.
 
 ## Tool catalog state
 
