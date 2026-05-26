@@ -110,6 +110,20 @@ Each completed flow produces:
 - **Scaffold** — deployable Workers project (on demand)
 - **Contradiction Report** — cross-mode consistency validation
 
+## Content Provenance
+
+The Content Provenance API validates AI-generated or AI-assisted content against E-E-A-T criteria and returns a cryptographic audit receipt. Each receipt is hash-chained to the previous one — tampering with any record invalidates every record that follows it in the chain.
+
+**Endpoint:** `POST /api/provenance/validate`  
+**Auth:** Bearer token (same credential as platform API)  
+**Response fields:** `validation` (gap report + suggestions), `audit_record_id` (UUIDv4), `chain_head` (current SHA-256 chain head)
+
+Validation checks four pillars — Experience, Expertise, Authoritativeness, Trustworthiness — against the Google November 2024 site reputation policy by default. Each gap includes severity, a count of what was found vs. required, and actionable remediation examples.
+
+Receipts can be independently verified at `trust.stackbilder.com/evidence/:hash`.
+
+The underlying libraries — `@stackbilt/evidence-core` and `@stackbilt/audit-chain` — are both Apache-2.0 and available on npm. See [Security](/security#content-provenance--audit-chain) for the full architecture.
+
 ## Access
 
 Access Stackbilder via three sibling consumers — same backends, different transports:
