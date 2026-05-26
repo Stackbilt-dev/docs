@@ -161,9 +161,11 @@ Returns `{ "status": "ok", "version": "0.2.0" }`.
 
 ## MCP Tools
 
-Connect MCP-compatible agents to img-forge for programmatic image generation.
+Connect MCP-compatible agents to img-forge through the Stackbilt MCP gateway. img-forge MCP access routes through the same OAuth-authenticated gateway that serves all platform tools (see [MCP Gateway](/mcp)).
 
-**Endpoint:** `https://img-forge-mcp.blue-pine-edf6.workers.dev/mcp`
+**Endpoint:** `https://mcp.stackbilt.dev/mcp`
+
+**Auth:** OAuth 2.1 + PKCE (recommended for end-user agents) or Static Bearer token for CI/server-to-server.
 
 ### Claude Code Configuration
 
@@ -172,14 +174,16 @@ Add to your MCP settings:
 ```json
 {
   "mcpServers": {
-    "img-forge": {
-      "url": "https://img-forge-mcp.blue-pine-edf6.workers.dev/mcp"
+    "stackbilt": {
+      "url": "https://mcp.stackbilt.dev/mcp"
     }
   }
 }
 ```
 
-### generate_image
+Tools are prefixed `image_` on the gateway: `image_generate`, `image_list_models`, `image_check_job`.
+
+### image_generate
 
 Generate an image from a text prompt. Requires `generate` scope.
 
@@ -191,11 +195,11 @@ Generate an image from a text prompt. Requires `generate` scope.
 
 The MCP tool always uses sync mode — it returns the completed image URL directly.
 
-### list_models
+### image_list_models
 
 List all available quality tiers with their providers, models, and default sizes. Requires `read` scope. Takes no parameters.
 
-### check_job
+### image_check_job
 
 Check the status of a generation job. Requires `read` scope.
 

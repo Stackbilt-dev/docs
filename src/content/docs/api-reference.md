@@ -337,7 +337,7 @@ Tier limits: `free` = 3 scaffolds / 5 images, `pro`/`team` = 50 scaffolds / 100 
 
 ## Agent consultations
 
-Structured C-level agent consultations powered by TarotScript. Both CTO and CISO receive signed receipts independently verifiable at `https://tarotscript-worker.blue-pine-edf6.workers.dev/verify/<hash>`.
+Structured C-level agent consultations powered by TarotScript. Both CTO and CISO receive signed receipts independently verifiable at `https://verify.stackbilt.dev/<hash>`.
 
 ### `POST /api/agents/run`
 
@@ -459,7 +459,7 @@ curl -X POST https://stackbilder.com/api/agents/run \
   },
   receipt: {
     hash: string,
-    verifyUrl: string,              // path — prepend tarotscript-worker origin
+    verifyUrl: string,              // path — full URL: https://verify.stackbilt.dev<verifyUrl>
     claimsSchemaVersion: number
   },
   seed: number,
