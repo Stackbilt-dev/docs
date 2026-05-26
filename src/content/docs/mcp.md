@@ -5,7 +5,7 @@ section: "platform"
 order: 5
 color: "#22d3ee"
 tag: "05"
-lastVerified: "2026-05-02"
+lastVerified: "2026-05-26"
 sourceSlug: "mcp-gateway-architecture"
 ---
 
