@@ -101,7 +101,7 @@ This isn't theoretical. Charter uses ADF to govern its own codebase. The `.ai/` 
 
 Every commit runs through a pre-commit hook that executes `charter adf evidence --auto-measure`. If a source file exceeds its declared LOC ceiling, the commit is rejected. We can't ship code that violates our own governance rules -- even by accident, even at 2am.
 
-Here is the actual output from Charter's own evidence check (v0.8.0):
+Here is the actual output from Charter's own evidence check (v1.0.0):
 
 ```text
   ADF Evidence Report
