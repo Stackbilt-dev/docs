@@ -100,7 +100,7 @@ For the live tool catalog, query `tools/list` against the gateway directly, or r
 
 ## Documentation surface
 
-The canonical platform-side reference for the gateway is `Stackbilt-dev/stackbilt-web/docs/mcp.md` (rendered at `docs.stackbilt.dev/mcp`). The docs site sources this page from `stackbilt-web` per `docs-manifest.json` v3 (`Stackbilt-dev/docs@2bcd7cc`). The gateway repo's own `docs/mcp.md` is currently stale (still describes the decommissioned `stackbilt.dev/mcp` endpoint with Compass JWT auth and the deprecated `flow_*` tool catalog as canonical) — left for the gateway team to refresh.
+The canonical platform-side reference for the gateway is `Stackbilt-dev/stackbilt-web/docs/mcp.md` (rendered at `docs.stackbilder.com/mcp`). The docs site sources this page from `stackbilt-web` per `docs-manifest.json` v3 (`Stackbilt-dev/docs@2bcd7cc`). The gateway repo's own `docs/mcp.md` is currently stale (still describes the decommissioned `stackbilt.dev/mcp` endpoint with Compass JWT auth and the deprecated `flow_*` tool catalog as canonical) — left for the gateway team to refresh.
 
 ## What was deprecated
 
@@ -129,7 +129,7 @@ A new feature lands by adding a route on `stackbilder.com` (the canonical contra
 - **Gateway repo:** `Stackbilt-dev/stackbilt-mcp-gateway`
 - **Wrangler config (binding map):** `Stackbilt-dev/stackbilt-mcp-gateway/wrangler.toml`
 - **Public registry:** `registry.modelcontextprotocol.io` (search: `stackbilt`)
-- **Docs site page:** `https://docs.stackbilt.dev/mcp`
+- **Docs site page:** `https://docs.stackbilder.com/mcp`
 - **Canonical platform-side reference:** `Stackbilt-dev/stackbilt-web/docs/mcp.md`
 - **Manifest pointing here:** `Stackbilt-dev/docs/docs-manifest.json` v3
 - **Two-consumer fractal principle:** memory `feedback_two_consumer_fractal`
