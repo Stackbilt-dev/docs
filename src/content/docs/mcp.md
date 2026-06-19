@@ -5,7 +5,7 @@ section: "platform"
 order: 5
 color: "#22d3ee"
 tag: "05"
-lastVerified: "2026-05-26"
+lastVerified: "2026-06-19"
 sourceSlug: "mcp-gateway-architecture"
 ---
 
@@ -73,10 +73,36 @@ Authoritative source: `Stackbilt-dev/stackbilt-mcp-gateway/wrangler.toml`.
 
 | Method | Header | Use case |
 |---|---|---|
-| OAuth 2.1 + PKCE | `Authorization: Bearer <oauth-access-token>` | Recommended for end-user agent connections (Claude Desktop, Claude Code). Issued via `@cloudflare/workers-oauth-provider`. Tokens stored in `OAUTH_KV`. |
+| OAuth 2.1 + PKCE (DCR) | `Authorization: Bearer <oauth-access-token>` | Recommended for end-user agent connections (Claude Desktop, Claude Code, MCP Inspector). Clients self-register via Dynamic Client Registration — no pre-issued `client_id` required. |
 | Static Bearer | `Authorization: Bearer <STACKBILT_MCP_TOKEN>` | Server-to-server / CI integrations. |
 
-The gateway intentionally does **not** accept `ea_*` API keys (those are issued from `stackbilder.com/settings` for the platform's REST API). Agent flows go through OAuth so the user can grant scoped consent.
+### Dynamic Client Registration (DCR)
+
+The gateway exposes a [RFC 7591](https://www.rfc-editor.org/rfc/rfc7591) Dynamic Client Registration endpoint. MCP clients that support DCR (Claude Desktop, Claude Code, MCP Inspector) register automatically on first connect — there is no static `client_id` or `client_secret` to configure in advance.
+
+| OAuth endpoint | Path |
+|---|---|
+| Authorization | `https://mcp.stackbilt.dev/authorize` |
+| Token | `https://mcp.stackbilt.dev/token` |
+| Client Registration | `https://mcp.stackbilt.dev/register` |
+
+**Scopes:**
+
+| Scope | Access |
+|---|---|
+| `read` | `tools/list`, `tools/call` for read-only tools |
+| `generate` | All mutating tools (`scaffold_create`, `image_generate`, etc.) |
+
+**Connection settings for MCP clients:**
+
+| Setting | Value |
+|---|---|
+| Transport | Streamable HTTP |
+| MCP endpoint | `https://mcp.stackbilt.dev/mcp` |
+| Auth type | Dynamic OAuth Client (DCR) |
+| Client ID / Secret | Not applicable — issued dynamically at registration |
+
+The gateway intentionally does **not** accept `ea_*` API keys on the `/mcp` path (those are issued from `stackbilder.com/settings` for the platform's REST API). The `/api/mcp` path accepts Bearer API keys for server-to-server use.
 
 ## Transports
 
@@ -88,19 +114,22 @@ The gateway intentionally does **not** accept `ea_*` API keys (those are issued 
 
 Streamable HTTP sessions use the `Mcp-Session-Id` header. The first `initialize` POST returns a session ID; include it on subsequent requests; `DELETE /mcp` with the session ID to terminate. Capability negotiation happens via the standard MCP `initialize` message over POST — there is no separate unauthenticated info endpoint.
 
-## Tool catalog state
+## Tool catalog
 
-The gateway's tool surface is **migrating** at the time of this writing:
+| Prefix | Backend | Description |
+|---|---|---|
+| `scaffold_*` | `TAROTSCRIPT` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment. `scaffold_create` response includes `cloudflareManifest: { status, stale, valid_until? }`. |
+| `image_*` | `IMG_FORGE` | AI image generation (5 quality tiers: draft / standard / premium / ultra / ultra_plus). |
+| `agent_*` | `TAROTSCRIPT` | C-level agent consultations (CTO, CISO, CFO, CPO, architect). |
+| `billing_*` | `AUTH_SERVICE` | Credit balance, quota status, and autonomous credit purchase. |
 
-- Legacy `flow_*` tools (architecture mode pipeline) — still bound, but the gateway repo's README marks them DEPRECATED and they're being replaced by deterministic `scaffold_*` tools (TarotScript-backed).
-- `scaffold_*` tools — the canonical replacement for `flow_*`. Faster (~20ms structure, ~2s with oracle prose), no LLM calls for file generation.
-- `image_*` tools — stable, route through `img-forge-mcp`.
+`flow_*` tools were removed on 2026-06-12 (v0.1.0). `visual_*` tools are present but gated as internal-only.
 
-For the live tool catalog, query `tools/list` against the gateway directly, or read the gateway repo README. Do **not** treat any frozen tool listing as authoritative — the surface is in flux.
+For the authoritative live tool list, call `tools/list` on the gateway or read the gateway repo README (`Stackbilt-dev/stackbilt-mcp-gateway`). The `server.json` in that repo is the MCP registry entry.
 
 ## Documentation surface
 
-The canonical platform-side reference for the gateway is `Stackbilt-dev/stackbilt-web/docs/mcp.md` (rendered at `docs.stackbilder.com/mcp`). The docs site sources this page from `stackbilt-web` per `docs-manifest.json` v3 (`Stackbilt-dev/docs@2bcd7cc`). The gateway repo's own `docs/mcp.md` is currently stale (still describes the decommissioned `stackbilt.dev/mcp` endpoint with Compass JWT auth and the deprecated `flow_*` tool catalog as canonical) — left for the gateway team to refresh.
+The canonical platform-side reference for the gateway is this page (`docs.stackbilder.com/mcp`). The gateway repo (`Stackbilt-dev/stackbilt-mcp-gateway`) also carries `docs/api-reference.md`, `docs/user-guide.md`, and `docs/architecture.md` for developer-facing detail. The `server.json` in the gateway repo root is the MCP registry entry published at `registry.modelcontextprotocol.io`.
 
 ## What was deprecated
 
@@ -134,4 +163,4 @@ A new feature lands by adding a route on `stackbilder.com` (the canonical contra
 - **Manifest pointing here:** `Stackbilt-dev/docs/docs-manifest.json` v3
 - **Two-consumer fractal principle:** memory `feedback_two_consumer_fractal`
 
-When any of these contracts change shape (new service binding, new tool catalog, auth model change, transport addition, gateway URL change), update both the code and this page. Advance `last_verified`.
+When any of these contracts change shape (new service binding, new tool catalog, auth model change, transport addition, gateway URL change), update both the code and this page. Advance `lastVerified`.
