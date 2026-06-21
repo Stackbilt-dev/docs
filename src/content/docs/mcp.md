@@ -127,6 +127,18 @@ Streamable HTTP sessions use the `Mcp-Session-Id` header. The first `initialize`
 
 For the authoritative live tool list, call `tools/list` on the gateway or read the gateway repo README (`Stackbilt-dev/stackbilt-mcp-gateway`). The `server.json` in that repo is the MCP registry entry.
 
+## TarotScript direct MCP surface
+
+In addition to the gateway, the `tarotscript-worker` itself exposes a peer-to-peer MCP surface at `/mcp/tools` and `/mcp/invoke` for callers that hold a direct API key and do not need OAuth.
+
+| Tool ID | Description |
+|---|---|
+| `tarotscript.run_grader` | Grade an artifact against a rubric deck — returns per-dimension findings (TaskFit, Support, Actionability), aggregate score, gap report, and a chain-verifiable receipt. |
+
+This surface is additive and orthogonal to the gateway. Use the gateway for end-user agent connections; use the direct surface for CI pipelines and server-to-server callers with a static Bearer key.
+
+Full schema and endpoint reference: [TarotScript Runtime Reference](./tarotscript.md).
+
 ## Documentation surface
 
 The canonical platform-side reference for the gateway is this page (`docs.stackbilder.com/mcp`). The gateway repo (`Stackbilt-dev/stackbilt-mcp-gateway`) also carries `docs/api-reference.md`, `docs/user-guide.md`, and `docs/architecture.md` for developer-facing detail. The `server.json` in the gateway repo root is the MCP registry entry published at `registry.modelcontextprotocol.io`.

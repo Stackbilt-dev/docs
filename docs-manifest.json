@@ -54,6 +54,19 @@
           "tag": "09"
         }
       }
+    },
+    "tarotscript": {
+      "repo": "tarotscript",
+      "pages": {
+        "tarotscript.md": {
+          "source": "docs/tarotscript-reference.md",
+          "section": "platform",
+          "order": 3,
+          "color": "#818cf8",
+          "tag": "03",
+          "cadence": "contract-version-bump"
+        }
+      }
     }
   }
 }
