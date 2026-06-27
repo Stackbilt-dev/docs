@@ -1,6 +1,6 @@
 ---
 title: "img-forge API"
-description: "AI image generation service — text-to-image with multiple quality tiers"
+description: "AI image and video generation service — text-to-image and text-to-video with multiple quality tiers"
 section: "platform"
 order: 9
 color: "#f472b6"
@@ -9,7 +9,7 @@ tag: "09"
 
 # img-forge API
 
-img-forge is Stackbilder's AI image generation service. Submit a text prompt, get back a generated image. Supports 5 quality tiers (SDXL through Gemini 3.1), async job queuing, and content-addressed image storage on R2.
+img-forge is Stackbilder's AI image and video generation service. Submit a text prompt, get back a generated image or video clip. Supports 5 quality tiers (SDXL through Gemini 3 Pro), async job queuing, and content-addressed storage on R2.
 
 img-forge is included in all Stackbilder plans with no per-image costs. Usage counts against your monthly image quota.
 
@@ -70,6 +70,16 @@ Submit a generation request. Returns immediately with a job ID (async) or waits 
 | `prompt` | string | Yes | — | Text description, 1–2000 characters |
 | `negative_prompt` | string | No | — | Things to exclude (effective on `draft` tier only) |
 | `quality_tier` | string | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
+| `media_type` | string | No | `image` | `image` or `video` |
+| `duration_seconds` | integer | No | — | Video duration in seconds (video only) |
+| `fps` | integer | No | — | Video frame rate (video only) |
+| `motion_intensity` | number | No | — | Motion amount 0.0–1.0 (video only) |
+| `loop` | boolean | No | `false` | Whether the video loops (video only) |
+| `output_format` | string | No | `webp` | Delivery format: `png`, `webp`, `avif` |
+| `output_quality` | integer | No | `85` | Lossy compression quality 1–100 (webp/avif) |
+| `output_preset` | string | No | — | Resize variant: `thumbnail`, `standard`, `hero`, `portrait` |
+| `background_removal` | boolean | No | `false` | Return a `bg_removed_url` (transparent PNG, images only) |
+| `openai_model` | string | No | — | Override to `gpt-image-1` or `dall-e-3` (bypasses quality_tier) |
 | `sync` | boolean | No | `false` | Wait for completion before responding |
 | `idempotency_key` | string | No | — | Deduplication key (24h TTL) |
 
@@ -127,19 +137,23 @@ Check the state of a generation job. Jobs are scoped to the authenticated tenant
 }
 ```
 
-**Job states:** `queued` → `processing` → `completed` | `failed`
+**Job states:** `queued` → `processing` → `encoding` → `completed` | `failed` | `failed_encoding`
 
-Jobs that remain in `processing` for more than 60 seconds are automatically marked `failed` with a timeout error.
+The `encoding` state applies to video jobs after AI generation completes but before the output is stored. Jobs that exceed the timeout are automatically marked `failed` (images: 60 s, videos: 120 s).
 
-### Retrieve an Image
+### Retrieve an Asset
 
 ```
 GET /v2/assets/:id
 ```
 
-Stream the generated image from R2. Images are content-addressed by SHA-256 hash.
+Stream the generated image or video from R2. Images use SHA-256 content-addressed keys; videos use UUID-based keys (`video/{uuid}.{ext}`).
 
-Returns `image/png` with `Cache-Control: public, max-age=3600`. Returns `404` if the asset does not exist.
+Returns the asset with `Cache-Control: public, max-age=3600`. Returns `404` if the asset does not exist.
+
+**Range requests (video):** Supports `Range: bytes=start-end` for video seeking. Returns `206 Partial Content` with `Content-Range` and `Accept-Ranges: bytes`. Returns `416 Range Not Satisfiable` for out-of-bounds ranges.
+
+**Image resizing:** Append `?preset=thumbnail|standard|hero|portrait` to receive a resized variant via Cloudflare Image Resizing.
 
 ### Health Check
 
@@ -153,59 +167,102 @@ Returns `{ "status": "ok", "version": "0.2.0" }`.
 
 | Tier | Provider | Model | Negative Prompt | Default Size |
 |------|----------|-------|-----------------|--------------|
-| `draft` | Cloudflare AI | Stable Diffusion XL Lightning | Yes | 1024×1024 |
-| `standard` | Cloudflare AI | FLUX.2 Klein 4B | No | 1024×768 |
+| `draft` | Cloudflare AI | SDXL Lightning | Yes | 1024×1024 |
+| `standard` | Cloudflare AI | FLUX Klein 4B | No | 1024×768 |
 | `premium` | Cloudflare AI | FLUX.2 Dev | No | 1024×768 |
-| `ultra` | Gemini | Gemini 2.5 Flash Image | No | 1024×1024 |
-| `ultra_plus` | Gemini | Gemini 3.1 Flash Image Preview | No | 1024×1024 |
+| `ultra` | Google | Gemini 3.1 Flash Image Preview | No | 1024×1024 |
+| `ultra_plus` | Google | Gemini 3 Pro Image Preview | No | 1024×1024 |
 
 ## MCP Tools
 
-Connect MCP-compatible agents to img-forge through the Stackbilt MCP gateway. img-forge MCP access routes through the same OAuth-authenticated gateway that serves all platform tools (see [MCP Gateway](/mcp)).
+img-forge exposes a dedicated MCP server for AI agents. Claude Code, Cursor, or any MCP client can generate images and videos, manage variations, and check billing status during development workflows.
 
-**Endpoint:** `https://mcp.stackbilt.dev/mcp`
+**Endpoint:** `https://forge-mcp.stackbilder.com/`
 
-**Auth:** OAuth 2.1 + PKCE (recommended for end-user agents) or Static Bearer token for CI/server-to-server.
+**Auth:** OAuth 2.1 + PKCE (recommended) or `Authorization: Bearer <sb_live_*|imgf_*>` for API key access.
 
 ### Claude Code Configuration
 
-Add to your MCP settings:
+Add to `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "stackbilt": {
-      "url": "https://mcp.stackbilt.dev/mcp"
+    "img-forge": {
+      "type": "http",
+      "url": "https://forge-mcp.stackbilder.com/",
+      "headers": {
+        "Authorization": "Bearer ${IMG_FORGE_API_KEY}"
+      }
     }
   }
 }
 ```
 
-Tools are prefixed `image_` on the gateway: `image_generate`, `image_list_models`, `image_check_job`.
+Set `IMG_FORGE_API_KEY` in your shell environment or Claude Code's `env` settings.
 
-### image_generate
+### Available Tools
 
-Generate an image from a text prompt. Requires `generate` scope.
+| Tool | Description |
+|------|-------------|
+| `generate_image` | Generate or edit an image/video from a prompt (sync). Accepts all fields from `POST /v2/generate`. |
+| `list_models` | List available tiers, models, and providers. No parameters. |
+| `check_job` | Poll the status of an async generation job by ID. |
+| `create_variation` | Generate 1–4 seeded variations of a completed job (RunwayML img2img). |
+| `billing_status` | Read current tier, quota remaining, credit balance, and purchase eligibility. |
+| `billing_purchase_credits` | Purchase a credit pack via saved payment method (off-session Stripe charge). |
+
+### generate_image
+
+Generate an image or video from a text prompt. Always returns synchronously with the completed asset URL.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `prompt` | string | Yes | — | Text description, 1–2000 characters |
-| `quality_tier` | enum | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
-| `negative_prompt` | string | No | — | Exclusions (effective on `draft` tier only) |
+| `quality_tier` | string | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
+| `media_type` | string | No | `image` | `image` or `video` |
+| `negative_prompt` | string | No | — | Exclusions (draft tier only) |
+| `output_preset` | string | No | — | `thumbnail`, `standard`, `hero`, `portrait` |
+| `background_removal` | boolean | No | `false` | Return a transparent PNG bg-removed URL |
+| `openai_model` | string | No | — | `gpt-image-1` or `dall-e-3` |
 
-The MCP tool always uses sync mode — it returns the completed image URL directly.
+Ultra-tier preflight: if `openai_model` is set and your ultra-tier quota is exhausted, the tool returns a `QUOTA_EXHAUSTED` error with a suggestion to run `billing_purchase_credits`.
 
-### image_list_models
+### create_variation
 
-List all available quality tiers with their providers, models, and default sizes. Requires `read` scope. Takes no parameters.
+Generate 1–4 seeded variations of any completed job. Seed and strength are both honored (RunwayML img2img).
 
-### image_check_job
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `job_id` | string | Yes | — | Completed job to vary |
+| `count` | integer | No | `1` | Number of variations (1–4) |
+| `variation_strength` | number | No | `0.7` | 0 = close to source, 1 = maximum deviation |
+| `seed` | integer | No | — | Base seed; subsequent variations use `seed+i` |
 
-Check the status of a generation job. Requires `read` scope.
+Consumes N quota credits upfront before fanning out.
+
+### check_job
+
+Poll the status of a generation job.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `job_id` | string (UUID) | Yes | The job ID to check |
+| `job_id` | string (UUID) | Yes | The job ID returned by `generate_image` |
+
+### billing_status
+
+Returns current billing state — quota remaining, credit balance, saved-card status, and purchase eligibility. Takes no parameters. Does not consume quota.
+
+### billing_purchase_credits
+
+Purchase a credit pack using your saved payment method.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `packId` | string | Yes | `starter_100` (100 cr / $9.99), `growth_500` (500 cr / $39.99), `scale_2000` (2000 cr / $129.99) |
+| `idempotencyKey` | string | No | Stable key to prevent double-charge on retry |
+
+Requires a saved payment method (`billing_status.hasSavedCard: true`) and `purchaseStatus.status: "ready"`.
 
 ## Usage Limits
 
@@ -308,8 +365,9 @@ const job = await genRes.json();
 console.log("Job ID:", job.job_id);
 
 // Poll until complete
+const TERMINAL = new Set(["completed", "failed", "failed_encoding"]);
 let result = job;
-while (result.state !== "completed" && result.state !== "failed") {
+while (!TERMINAL.has(result.state)) {
   await new Promise((r) => setTimeout(r, 2000));
   const pollRes = await fetch(`${GATEWAY}/v2/jobs/${job.job_id}`, {
     headers: { "Authorization": `Bearer ${API_KEY}` },
@@ -318,6 +376,6 @@ while (result.state !== "completed" && result.state !== "failed") {
 }
 
 if (result.state === "completed") {
-  console.log("Image:", `${GATEWAY}${result.asset_url}`);
+  console.log("Asset:", result.asset_url);
 }
 ```
