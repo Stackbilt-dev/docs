@@ -4,7 +4,7 @@ Run the Astro build and diagnose any errors.
 
 ## Instructions
 
-1. Run `npm run build` and capture the full output.
+1. Run `pnpm run build` and capture the full output.
 
 2. If the build **succeeds**:
    - Report: "Build passed."
@@ -17,7 +17,7 @@ Run the Astro build and diagnose any errors.
      - **Astro compilation error** — bad imports, missing components, syntax errors
      - **Tailwind config issue** — unknown utility class, missing `sb-*` token
      - **Content schema violation** — frontmatter doesn't match Zod schema in `src/content/config.ts`
-     - **Missing dependency** — module not found, run `npm install`
+     - **Missing dependency** — module not found, run `pnpm install`
    - Report the diagnosis with the exact error message and affected file.
    - Suggest a specific fix.
    - **Do NOT auto-fix.** Wait for user approval.

@@ -12,7 +12,7 @@ Build and deploy to Cloudflare Workers with automatic credential handling.
 
 ### Step 2: Build Verification
 
-4. Run `npm run build` and capture full output.
+4. Run `pnpm run build` and capture full output.
 5. If the build **succeeds with zero errors**:
    - Report: "Build passed. Proceeding to deploy."
    - Proceed to Step 3.
@@ -25,15 +25,15 @@ Build and deploy to Cloudflare Workers with automatic credential handling.
 ### Step 3: Environment Selection
 
 8. Determine target from user arguments (`$ARGUMENTS`):
-   - `staging`, `stage`, `preview` → use `npm run deploy:staging`
-   - `production`, `prod`, `live`, or no argument → use `npm run deploy`
+   - `staging`, `stage`, `preview` → use `pnpm run deploy:staging`
+   - `production`, `prod`, `live`, or no argument → use `pnpm run deploy`
    - When deploying to production with no explicit argument, proceed without asking (this is the default target for this project).
 
 ### Step 4: Deploy
 
 9. Run the deploy command with credentials injected:
    ```
-   CLOUDFLARE_API_TOKEN=<token> CLOUDFLARE_ACCOUNT_ID=<account_id> npm run deploy
+   CLOUDFLARE_API_TOKEN=<token> CLOUDFLARE_ACCOUNT_ID=<account_id> pnpm run deploy
    ```
 10. Report the deployment result including the live URL.
 11. The production URL is: **https://docs.stackbilt.dev**

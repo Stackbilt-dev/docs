@@ -4,7 +4,7 @@ Run Charter drift detection to identify architectural drift from the blessed sta
 
 ## Instructions
 
-1. Run `npm run govern:drift` (equivalent to `charter drift --ci`).
+1. Run `pnpm run govern:drift` (equivalent to `charter drift --ci`).
 
 2. Parse the output:
    - **No drift**: Report "No architectural drift detected." and stop.

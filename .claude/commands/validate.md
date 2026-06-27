@@ -4,7 +4,7 @@ Run Charter governance validation against recent commits.
 
 ## Instructions
 
-1. Run `npm run govern:validate` (equivalent to `charter validate --ci`).
+1. Run `pnpm run govern:validate` (equivalent to `charter validate --ci`).
 
 2. Parse the output:
    - **Pass**: Report "Governance validation passed." and stop.

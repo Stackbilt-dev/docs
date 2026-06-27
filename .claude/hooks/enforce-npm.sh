@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hook: Block yarn, pnpm, bun — this repo uses npm only (package-lock.json)
+# Hook: Block npm, yarn, bun — this repo uses pnpm only (pnpm-lock.yaml)
 
 INPUT=$(cat)
 
@@ -10,9 +10,9 @@ else
   COMMAND=$(echo "$INPUT" | grep -o '"command"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/"command"[[:space:]]*:[[:space:]]*"//;s/"$//')
 fi
 
-# Block alternative package managers
-if echo "$COMMAND" | grep -qE '(^|\s|&&\s*|;\s*)(yarn|pnpm|bun)(\s|$)'; then
-  echo "BLOCKED: This repository uses npm (package-lock.json exists). Do not use yarn, pnpm, or bun." >&2
+# Block alternative package managers (npm, yarn, bun)
+if echo "$COMMAND" | grep -qE '(^|\s|&&\s*|;\s*)(npm|yarn|bun)(\s|$)'; then
+  echo "BLOCKED: This repository uses pnpm (pnpm-lock.yaml). Use pnpm instead of npm/yarn/bun." >&2
   exit 2
 fi
 

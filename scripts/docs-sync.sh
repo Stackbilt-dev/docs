@@ -301,7 +301,7 @@ fi
 if [[ $SYNCED -gt 0 || $GENERATED -gt 0 ]]; then
   log "Building docs site..."
   cd "$PROJECT_ROOT"
-  npm run build 2>&1 | tail -5 || {
+  pnpm run build 2>&1 | tail -5 || {
     fail "Build failed"
     exit 1
   }
@@ -310,7 +310,7 @@ if [[ $SYNCED -gt 0 || $GENERATED -gt 0 ]]; then
   # ─── Deploy ─────────────────────────────────────────────────
 
   log "Deploying to Cloudflare..."
-  npm run deploy 2>&1 | tail -5 || {
+  pnpm run deploy 2>&1 | tail -5 || {
     fail "Deploy failed"
     exit 1
   }

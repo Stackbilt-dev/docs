@@ -40,7 +40,7 @@ Content here...
 
 6. Validate that the frontmatter conforms to the schema in `src/content/config.ts` by reading that file and checking field types.
 
-7. Confirm what was created. Remind the user to run `npm run dev` to preview. Then stop — do not write additional content or propose next steps.
+7. Confirm what was created. Remind the user to run `pnpm run dev` to preview. Then stop — do not write additional content or propose next steps.
 
 ## User Request
 
