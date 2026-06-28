@@ -1,8 +1,9 @@
 {
   "$schema": "Stackbilt docs sync manifest — maps product repos to doc site pages",
-  "version": 3,
+  "version": 4,
   "contentDir": "src/content/docs",
   "org": "Stackbilt-dev",
+  "_note": "Only pages synced FROM source repos belong here. The 30-page site includes many hand-authored pages (see src/content/docs/) that are maintained directly in this repo and do not appear in this manifest. See wiki-publish-manifest.json for AEGIS wiki → Astro page mappings.",
   "sources": {
     "charter": {
       "repo": "charter",
@@ -39,6 +40,13 @@
           "section": "ecosystem",
           "order": 6,
           "color": "#c084fc",
+          "tag": "06"
+        },
+        "stackbilt-web.md": {
+          "source": "docs/stackbilt-web.md",
+          "section": "platform",
+          "order": 6,
+          "color": "#a78bfa",
           "tag": "06"
         }
       }
