@@ -31,6 +31,13 @@
     "failOnWarn": false,
     "postComments": false
   },
+  "locBudgets": {
+    "enabled": true,
+    "paths": [
+      { "pattern": "src/**/*.ts", "warn": 150, "fail": 300 },
+      { "pattern": "src/**/*.astro", "warn": 300, "fail": 600 }
+    ]
+  },
   "audit": {
     "policyCoverage": {
       "enabled": true,

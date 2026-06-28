@@ -20,7 +20,9 @@
     "charter:setup": "charter setup --preset docs --ci github --yes",
     "verify:adf": "charter doctor --adf-only --ci --format json && charter adf evidence --auto-measure --ci --format json",
     "charter:doctor": "charter doctor --format json",
-    "charter:adf:bundle": "charter adf bundle --task \"describe task\" --format json"
+    "charter:adf:bundle": "charter adf bundle --task \"describe task\" --format json",
+    "charter:adf:sync": "charter adf sync --check --format json",
+    "charter:telemetry": "charter telemetry report --period 24h --format json"
   },
   "dependencies": {
     "@astrojs/mdx": "7.0.0",
@@ -30,7 +32,7 @@
     "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
-    "@stackbilt/cli": "0.6.0",
+    "@stackbilt/cli": "1.7.0",
     "wrangler": "^4.67.0"
   }
 }
