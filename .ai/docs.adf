@@ -1,0 +1,35 @@
+ADF: 0.1
+
+📋 CONTEXT [advisory]:
+  - Content-only docs repo. Every session involves reading, summarizing, or writing doc pages.
+  - Pages live in src/content/docs/<slug>.md — Astro Content Collection with glob() loader.
+  - Schema is Zod-typed in src/content.config.ts. Sidebar order, prev/next, and search auto-derive from frontmatter.
+
+⚠ CONSTRAINTS [load-bearing]:
+  - Every doc page requires this frontmatter:
+      title: "Page Title"   # sidebar, breadcrumb, search
+      section: "charter"    # charter | platform | ecosystem
+      order: 7              # numeric — controls sidebar + prev/next ordering
+      color: "#hexcode"     # hex; derive from SECTION_META in src/lib/navigation.ts
+      tag: "07"             # zero-padded string of `order`
+    Optional: description, lastVerified, sourceSlug.
+  - Section colors are canonical in SECTION_META in src/lib/navigation.ts. Always derive from there — never guess or hardcode from memory.
+  - Changing frontmatter keys or the Zod schema in src/content.config.ts requires checking src/lib/navigation.ts for downstream consumers.
+
+🔌 SKILLS [load-bearing]:
+  - aegis-delegate — before reading any doc page for exploration or summary, check line count:
+        wc -l src/content/docs/<slug>.md
+      If >300 lines → delegate first:
+        node ~/.claude/skills/aegis-delegate/delegate.js [provider] summarize <path> "what you need"
+      Read directly only when: (a) about to edit (Edit tool needs exact line numbers), (b) verbatim text required.
+  - /docs skill — for multi-page audits, stale content detection, or GitHub issue sync:
+        /docs              # full sweep + commit
+        /docs --no-issues  # content-only, skip GitHub
+        /docs --no-commit  # dry-run, report only
+    Invoke via Skill tool when doing cross-page documentation maintenance.
+
+📖 GUIDE [advisory]:
+  - Understanding a page → check LOC → delegate if >300, else Read.
+  - Editing a page → Read directly (need exact line numbers for Edit tool).
+  - Cross-page audit or stale sweep → /docs skill.
+  - Adding a page: create src/content/docs/<slug>.md with required frontmatter; derive color from SECTION_META; page auto-appears in sidebar, search, and prev/next.

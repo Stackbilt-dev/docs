@@ -1,4 +1,11 @@
 ADF: 0.1
+
 🧠 STATE:
-  CURRENT: Repository initialized with ADF context system
-  NEXT: Configure on-demand modules for your stack
+  CURRENT: Docs site on Astro 7.0.3, pnpm@10, @stackbilt/cli 1.7.0. 13 doc pages across charter / platform / ecosystem sections.
+  RECENT:
+    - Astro 7 migration: content config moved to src/content.config.ts; render() is now a named import
+    - Upgraded @stackbilt/cli 0.6.0 → 1.7.0; added locBudgets to .charter/config.json
+    - Package manager migrated from npm to pnpm (pnpm@10.x)
+    - Added ecosystem pages: aegis-core, audit-chain, evidence-core, worker-observability
+    - ADF aligned: docs.adf added to DEFAULT_LOAD; aegis-delegate and /docs skill procedures embedded in ADF
+  NEXT: Ready for next content sprint
