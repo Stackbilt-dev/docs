@@ -5,7 +5,7 @@ section: "platform"
 order: 5
 color: "#22d3ee"
 tag: "05"
-lastVerified: "2026-06-21"
+lastVerified: "2026-06-28"
 sourceSlug: "mcp-gateway-architecture"
 ---
 
@@ -66,10 +66,10 @@ Authoritative source: `Stackbilt-dev/stackbilt-mcp-gateway/wrangler.toml`.
 | Binding | Backend Worker | Tool prefix on the gateway | What it routes |
 |---|---|---|---|
 | `AUTH_SERVICE` | `edge-auth` (entrypoint `AuthEntrypoint`) | (used internally) | Tenant resolution, API-key validation, OAuth grant storage in OAUTH_KV, entitlement checks, quota reservation |
-| `TAROTSCRIPT` | `tarotscript-worker` | `scaffold_*` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment hand-off |
-| `IMG_FORGE` | `img-forge-mcp` | `image_*` | AI image generation (multi-provider, multi-tier) |
-| `ENGINE` | `stackbilt-engine` | (architecture flows) | Architecture mode pipeline (PRODUCT → SPRINT) — distinct from `tarotscript-worker`'s scaffold path |
-| `DEPLOYER` | `stackbilt-deployer` | (deploy flows) | Cloudflare Workers deployment, D1 provisioning, DNS via API |
+| `TAROTSCRIPT` | `tarotscript-worker` | `scaffold_*`, `agent_*` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment hand-off, agent consultations |
+| `IMG_FORGE` | `img-forge-mcp` | *(not in live registry)* | AI image generation — use [img-forge REST API](/img-forge) directly |
+| `ENGINE` | `stackbilt-engine` | *(planned)* | Architecture mode pipeline (PRODUCT → SPRINT) |
+| `DEPLOYER` | `stackbilt-deployer` | *(planned)* | Cloudflare Workers deployment, D1 provisioning, DNS via API |
 
 ## Authentication
 
@@ -224,18 +224,79 @@ For clients without OAuth support, issue a static token at `stackbilder.com/sett
 
 Streamable HTTP sessions use the `Mcp-Session-Id` header. The first `initialize` POST returns a session ID; include it on subsequent requests; `DELETE /mcp` with the session ID to terminate. Capability negotiation happens via the standard MCP `initialize` message over POST — there is no separate unauthenticated info endpoint.
 
+## Rate limiting
+
+Per-tenant fixed-window rate limiting via `RATELIMIT_KV` (60-second window):
+
+| Tier | Requests / minute |
+|------|------------------|
+| Free | 20 |
+| Hobby | 60 |
+| Pro | 300 |
+| Enterprise | 1,000 |
+
+On limit exhaustion the gateway returns `429` with `Retry-After` and `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` headers.
+
 ## Tool catalog
 
-| Prefix | Backend | Description |
-|---|---|---|
-| `scaffold_*` | `TAROTSCRIPT` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment. See [TarotScript Runtime](/tarotscript) for the direct API surface. `scaffold_create` response includes `cloudflareManifest: { status, stale, valid_until? }`. |
-| `image_*` | `IMG_FORGE` | AI image generation (5 quality tiers: draft / standard / premium / ultra / ultra_plus). See [img-forge API](/img-forge) for direct REST access, model catalog, and billing. |
-| `agent_*` | `TAROTSCRIPT` | C-level agent consultations (CTO, CISO, CFO, CPO, architect). |
-| `billing_*` | `AUTH_SERVICE` | Credit balance, quota status, and autonomous credit purchase. |
+### Scaffold tools (`TAROTSCRIPT` binding)
 
-`flow_*` tools were removed on 2026-06-12 (v0.1.0). `visual_*` tools are present but gated as internal-only.
+| Tool | Description |
+|------|-------------|
+| `scaffold_create` | Generate deployable project files from a description. Response includes `files[]`, `nextSteps[]`, `cloudflareManifest: { status, stale, valid_until? }`. |
+| `scaffold_classify` | Classify an intention to a Cloudflare stack pattern. Returns `pattern`, `confidence`, `traits`, `stack`, `alternatives`. |
+| `scaffold_publish` | Publish generated scaffold to a new GitHub repo with an atomic initial commit. |
+| `scaffold_deploy` | Deploy a published scaffold to Cloudflare Workers via the deployer pipeline. |
+| `scaffold_import` | Import an n8n workflow JSON and transpile it to a deployable Cloudflare Worker. |
+| `scaffold_status` | Poll the status of an async scaffold, publish, or deploy operation by job ID. |
+
+### Agent tools (`TAROTSCRIPT` binding)
+
+| Tool | Description |
+|------|-------------|
+| `agent_*` | C-level agent consultations (CTO, CISO, CFO, CPO, architect). See `agent_bootstrap` example below. Responses include a chain-verifiable `receipt` field. |
+
+### Billing tools (`AUTH_SERVICE` binding)
+
+| Tool | Description |
+|------|-------------|
+| `billing_status` | Return current credit balance, quota state, and tier. |
+| `billing_purchase_credits` | Autonomous credit top-up. Charges the tenant's Stripe payment method on file. |
+
+`flow_*` tools were removed on 2026-06-12 (v0.1.0). `visual_*` tools are present but gated as internal-only. `image_*` tools are not in the current live registry — use the [img-forge REST API](/img-forge) directly for image generation.
 
 For the authoritative live tool list, call `tools/list` on the gateway or read the gateway repo README (`Stackbilt-dev/stackbilt-mcp-gateway`). The `server.json` in that repo is the MCP registry entry.
+
+## Scaffold pipeline (end-to-end)
+
+```
+You: "Build a restaurant menu API with D1 storage"
+  │
+  ▼
+scaffold_create → structured facts + deployable project files
+  │
+  ▼
+scaffold_publish → GitHub repo with atomic initial commit
+  │
+  ▼
+git clone → npm install → npx wrangler deploy → live Worker
+```
+
+Zero LLM calls for file generation. ~20ms for structure, ~2s with oracle prose.
+
+Use `scaffold_classify` before `scaffold_create` to inspect the stack pattern before committing to a scaffold.
+
+## Security model
+
+Every tool in the gateway declares a risk level in `route-table.ts`:
+
+| Risk level | Meaning |
+|------------|---------|
+| `READ_ONLY` | No mutations — safe to expose broadly |
+| `LOCAL_MUTATION` | Mutates gateway-managed state only |
+| `EXTERNAL_MUTATION` | Calls an external system (GitHub, Cloudflare, Stripe) |
+
+`tools/list` is filtered by token scopes. `tools/call` requires the `generate` scope for any mutating tool. Cost attribution runs before dispatch — quota is reserved via `edge-auth` and committed or refunded based on outcome. Audit events are emitted to `PLATFORM_EVENTS_QUEUE` with secret redaction and trace IDs on every tool call.
 
 ## TarotScript direct MCP surface
 
@@ -284,11 +345,11 @@ scaffold_create: Build a multi-tenant SaaS API with Stripe billing and D1
 </details>
 
 <details>
-<summary><strong>tarot_classify</strong> — Classify an intention to a Cloudflare stack pattern</summary>
+<summary><strong>scaffold_classify</strong> — Classify an intention to a Cloudflare stack pattern</summary>
 
 **Prompt:**
 ```
-tarot_classify: real-time notification service with WebSockets and persistent state per connection
+scaffold_classify: real-time notification service with WebSockets and persistent state per connection
 ```
 
 **Response shape:**

@@ -318,7 +318,3 @@ Run `pnpm test:update-snapshots` after any intentional visual change.
 ## Key Conventions
 
 **Scaffold starter presets** — `/flows/new` accepts `?starter=<key>` to pre-fill the CreateFlow form. Keys: `saas_api`, `dashboard_app`, `ai_chatbot`, `edge_api`. Used by the dashboard welcome grid, RecentActivity empty state, and CreateFlow chips row.
-
-**Evidence receipts** — `evidence_publications.receipt_version` is versioned (v1–v4 / "v2.2"). Unknown versions surface as `tampered`, never silently downgrade. See `src/lib/evidence-receipts.ts`.
-
-**Internal observability writes** — stackbilt-web writes calibration telemetry to `OBSERVE_DB` using the `internal:*` worker-name prefix so internal rows never appear in tenant Observe UIs. Apply `INTERNAL_WORKER_SQL_FILTER` to any new user-facing Observe query.
