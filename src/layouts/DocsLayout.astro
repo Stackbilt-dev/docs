@@ -7,11 +7,12 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import PrevNext from '../components/PrevNext.astro';
 import Search from '../components/Search.astro';
 import Footer from '../components/Footer.astro';
+import Seo from '../components/Seo.astro';
 import '../styles/global.css';
 
 interface Props {
   title: string;
-  description?: string;
+  description: string;
   tag: string;
   color: string;
   order: number;
@@ -22,10 +23,6 @@ interface Props {
 
 const { title, description, tag, color, order, slug, section, headings } = Astro.props;
 const { sections } = await getNavigation();
-
-const metaDescription = description || `${title} — Charter CLI and StackBilt platform documentation.`;
-const canonicalUrl = `https://docs.stackbilder.com/${slug}`;
-const pageTitle = `${title} — Docs by Stackbilt`;
 ---
 
 <!doctype html>
@@ -34,39 +31,12 @@ const pageTitle = `${title} — Docs by Stackbilt`;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="canonical" href={canonicalUrl} />
-    <title>{pageTitle}</title>
-    <meta name="description" content={metaDescription} />
+
+    <Seo title={title} description={description} slug={slug} section={section} />
 
     <!-- GA4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T3MSE40BWF"></script>
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-T3MSE40BWF');</script>
-
-    <!-- Open Graph -->
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={metaDescription} />
-    <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Docs by Stackbilt" />
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={metaDescription} />
-
-    <!-- JSON-LD -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "TechArticle",
-      "headline": title,
-      "description": metaDescription,
-      "url": canonicalUrl,
-      "publisher": {
-        "@type": "Organization",
-        "name": "Stackbilt",
-        "url": "https://stackbilder.com"
-      }
-    })} />
   </head>
   <body class="h-screen w-screen bg-sb-bg text-sb-text-2 font-body flex flex-col overflow-hidden">
     <!-- Ambient grid -->
