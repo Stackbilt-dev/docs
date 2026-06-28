@@ -12,7 +12,7 @@ sourceSlug: "tarotscript-reference"
 # TarotScript Runtime Reference
 
 **Worker:** `tarotscript-worker` — Cloudflare Worker  
-**Base URL:** `https://tarotscript-worker.blue-pine-edf6.workers.dev`  
+**Base URL:** `https://tarotscript.com`  
 **MCP Gateway access:** `https://mcp.stackbilt.dev/mcp` (see [MCP Gateway](./mcp.md))
 
 TarotScript is the deterministic scaffold and agent consultation engine that powers the [Stackbilder platform](/platform). Part of the [Stackbilt ecosystem](/ecosystem). The platform-facing REST interface is documented in the [API Reference](/api-reference#scaffolder-flows) and [Agent Consultations](/api-reference#agent-consultations) sections.
@@ -332,7 +332,7 @@ const file = ScaffoldFile.parse(response.codegen.files[0]);
 
 - **Worker repo:** `Stackbilt-dev/tarotscript` (private)
 - **Contracts package:** [`@stackbilt/contracts`](/contracts) on npm
-- **Runtime endpoint:** `https://tarotscript-worker.blue-pine-edf6.workers.dev`
+- **Runtime endpoint:** `https://tarotscript.com`
 - **MCP gateway docs:** [mcp.md](./mcp.md)
 - **Deck authoring guide:** `docs/deck-authoring.md` in the tarotscript repo
 - **Agent manifests:** `docs/agents.md` in the tarotscript repo
