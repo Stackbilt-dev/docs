@@ -11,7 +11,7 @@ tag: "09"
 
 img-forge is Stackbilder's AI image generation service. Submit a text prompt, get back a generated image. Supports 5 quality tiers (SDXL Lightning through Gemini 3 Pro), img2img editing, async job queuing, and content-addressed storage on R2.
 
-Available at `imgforge.stackbilt.dev` with API key, OAuth 2.1 (MCP), or session authentication. Also accessible via the `@img-forge/cli` CLI tool and MCP server.
+Available at `imgforge.stackbilt.dev` with API key, OAuth 2.1 (MCP), or session authentication. Also accessible via the MCP server and a forthcoming CLI tool.
 
 **Direct gateway:** `imgforge.stackbilt.dev`
 **MCP server:** `forge-mcp.stackbilder.com/mcp`
@@ -307,15 +307,7 @@ OpenAI and Gemini models are gated behind a community funding milestone. These m
 
 ## CLI
 
-`@img-forge/cli` is a zero-dependency Node.js CLI (requires Node ≥ 18.3).
-
-**Install:**
-
-```bash
-npm install -g @img-forge/cli
-# or run without installing:
-npx imgforge
-```
+`@img-forge/cli` is a zero-dependency Node.js CLI (requires Node ≥ 18.3). Not yet published to npm — coming soon.
 
 **Authentication:** Set `IMGFORGE_API_KEY` in your environment, or pass `--key <key>` per command.
 
