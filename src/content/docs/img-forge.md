@@ -9,7 +9,7 @@ tag: "09"
 
 # img-forge API
 
-img-forge is Stackbilder's AI image generation service. Part of the [Stackbilt ecosystem](/ecosystem) — also accessible as `image_*` tools through the [MCP Gateway](/mcp) and as `POST /api/images/*` on the [platform REST API](/api-reference#images).
+img-forge is Stackbilder's AI image generation service. Part of the [Stackbilt ecosystem](/ecosystem) — also accessible as `image_*` tools through the [MCP Gateway](/mcp) and as `POST /api/images/*` on the [platform REST API](/api-reference#images). If you're migrating from `ImageProvider` in `@stackbilt/llm-providers`, use img-forge instead — see the [deprecation notice](/llm-providers#deprecation-notice).
 
 Submit a text prompt, get back a generated image. Supports 5 quality tiers (SDXL Lightning through Gemini 3 Pro), img2img editing, async job queuing, and content-addressed storage on R2.
 

@@ -309,7 +309,7 @@ Global options: `--config <path>`, `--format text|json`, `--ci`, `--yes`.
 
 ## CI Integration
 
-Charter CI governance pairs naturally with the [Stackbilder platform](/platform) — use Charter to enforce commit governance and ADF metric ceilings, and the platform's [REST API](/api-reference) or [MCP gateway](/mcp) for architecture generation and scaffolding.
+Charter CI governance pairs naturally with the [Stackbilder platform](/platform) — use Charter to enforce commit governance and ADF metric ceilings, and the platform's [REST API](/api-reference) or [MCP gateway](/mcp) for architecture generation and scaffolding. For unattended Claude Code task queues with Charter blast-radius gating, see [cc-taskrunner](/cc-taskrunner). For LLM cost routing during Charter-governed sessions, see [bildy](/bildy).
 
 - Reusable template: `.github/workflows/governance.yml`
 - Generated in target repos by `charter setup --ci github`: `.github/workflows/charter-governance.yml`

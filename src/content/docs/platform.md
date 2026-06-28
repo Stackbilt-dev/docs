@@ -11,7 +11,7 @@ tag: "04"
 
 > **Architect v2 — Active Build.** The platform is in its v2 build cycle. Docs reflect the current stable surface; new capabilities are landing continuously.
 
-Stackbilder is a governance-enforced architecture planning tool that produces sprint-ready ADRs, deployable scaffolds, and structured artifacts — not vague suggestions. It sits at the center of the [Stackbilt ecosystem](/ecosystem), with [Charter CLI](/getting-started) handling local governance, the [MCP Gateway](/mcp) enabling agent access, and [TarotScript](/tarotscript) powering the deterministic scaffold engine.
+Stackbilder is a governance-enforced architecture planning tool that produces sprint-ready ADRs, deployable scaffolds, and structured artifacts — not vague suggestions. It sits at the center of the [Stackbilt ecosystem](/ecosystem), with [Charter CLI](/getting-started) handling local governance, the [MCP Gateway](/mcp) enabling agent access, and [TarotScript](/tarotscript) powering the deterministic scaffold engine. The frontend is [stackbilt-web](/stackbilt-web) (Astro 6 + React islands on Cloudflare Workers). The commercial CLI surface is [stackbilt-build](/stackbilt-build). Response contracts and scaffold schemas are exported from [@stackbilt/contracts](/contracts).
 
 ## The 6-Mode Pipeline
 

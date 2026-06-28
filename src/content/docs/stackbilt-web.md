@@ -46,6 +46,20 @@ Edge auth middleware validates sessions at the nearest POP via `AUTH_SERVICE` RP
 
 ---
 
+## Domain Strategy
+
+| Domain | Service | Repo |
+|--------|---------|------|
+| `stackbilder.com` | Platform frontend (this repo) | stackbilt-web |
+| `api.stackbilt.dev` | Backend API | edgestack-v2 |
+| `auth.stackbilt.dev` | Auth + billing | edge-auth |
+| `docs.stackbilt.dev` | Documentation | Stackbilt-dev/docs |
+| `blog.stackbilt.dev` | Blog | roundtable |
+| `trust.stackbilder.com` | Trust page verifier | stackbilt-web (subdomain) |
+| `mcp.stackbilt.dev/mcp` | MCP gateway | stackbilt-mcp-gateway |
+
+---
+
 ## Tools
 
 | Tool | Routes | Tier |
@@ -86,6 +100,56 @@ Two paths in `validateSession()` (`src/lib/auth.ts`):
 
 1. **API key** — `Authorization: Bearer ea_*` → `AUTH_SERVICE.validateApiKey()` RPC
 2. **Session cookie** — `better-auth.session_token` (dev) / `__Secure-better-auth.session_token` (prod) → `AUTH_SERVICE.validateSession()` RPC
+
+---
+
+## Billing
+
+Stripe is in **live mode** as of 2026-04-11 (`acct_1T8cxHL8cDQ0gdtT`). All Stripe API calls live in edge-auth — stackbilt-web holds no Stripe credentials and reaches billing exclusively via `AUTH_SERVICE` RPC.
+
+**Flows:**
+
+- **Checkout** — `POST /api/billing/checkout` → pre-flight `getEntitlements()` check returns 409 `{code: "already_subscribed"}` for paid tiers → `AUTH_SERVICE.createCheckoutSession()` → Stripe Checkout URL.
+- **Portal** — `POST /api/billing/portal` → `AUTH_SERVICE.createPortalSession()` → Stripe Billing Portal URL. Returns 422 with actionable copy if the tenant has no Stripe customer (comp/admin/lapsed).
+- **Downgrade** — `POST /api/billing/downgrade` → `AUTH_SERVICE.downgradeToFree()` → three outcomes:
+  - `canceled` — active sub scheduled to cancel at period end; tier stays Pro/Team until `effectiveAt`
+  - `no_subscription` — admin/comp account; immediate tier flip
+  - `already_canceled` — dangling `stripe_subscription_id`; immediate tier flip
+
+Webhooks are handled entirely by **edge-auth** — there is no webhook handler in this repo.
+
+Upgrade surfaces (`/pricing`, `/dashboard`, `/settings`, `UsageCard`) POST directly to `/api/billing/checkout` for authed Free users. `/pricing` SSR-branches CTAs on session state: anonymous → signup, authed Free → direct checkout, authed on current tier → disabled "Current plan" badge.
+
+---
+
+## Security
+
+### Headers
+
+Middleware (`src/middleware/index.ts`) sets on all responses:
+
+| Header | Value |
+|--------|-------|
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` |
+| `Content-Security-Policy-Report-Only` | Full policy; `report-uri /api/csp-report` |
+
+CSP is currently **Report-Only**. Flip to enforcing `Content-Security-Policy` after a clean 24–48h window. Policy allows `'self'`, GA4, Cloudflare Analytics, and Google Fonts. `img-src` is permissive (`https:`) until all image origins are audited.
+
+`POST /api/csp-report` logs browser-reported violations to `console.error` (visible via `wrangler tail`).
+
+### Asset Proxy
+
+`/v2/assets/[...path]` proxies authenticated img-forge asset requests:
+
+- Rejects paths containing `..` or `\` (400)
+- Requires `validateSession()` (401 for unauthenticated)
+- `Cache-Control: private, max-age=3600` (no cross-identity edge caching)
+
+The `/img-forge` showcase page bypasses the proxy — images resolve at SSR time via the service binding as base64 data URIs so anonymous visitors can see the gallery.
 
 ---
 

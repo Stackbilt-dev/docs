@@ -306,7 +306,7 @@ Raw DAG execution. Accepts a structured harness spec and executes compound multi
 
 ## Contracts
 
-The `@stackbilt/contracts` package (published to npm) contains the Zod schemas for all structured response shapes. Docs update cadence: aligned with `@stackbilt/contracts` semver bumps.
+The [`@stackbilt/contracts`](/contracts) package (published to npm) contains the Zod schemas for all structured response shapes. Docs update cadence: aligned with `@stackbilt/contracts` semver bumps.
 
 **Key exports**
 
@@ -331,7 +331,7 @@ const file = ScaffoldFile.parse(response.codegen.files[0]);
 ## Authority
 
 - **Worker repo:** `Stackbilt-dev/tarotscript` (private)
-- **Contracts package:** `@stackbilt/contracts` on npm
+- **Contracts package:** [`@stackbilt/contracts`](/contracts) on npm
 - **Runtime endpoint:** `https://tarotscript-worker.blue-pine-edf6.workers.dev`
 - **MCP gateway docs:** [mcp.md](./mcp.md)
 - **Deck authoring guide:** `docs/deck-authoring.md` in the tarotscript repo

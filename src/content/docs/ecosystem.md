@@ -201,6 +201,69 @@ Every significant decision flows through governance before implementation:
 7. **Evidence** — Charter validates ADF metric ceilings (`adf evidence --auto-measure --ci`)
 8. **CI** — Charter blocks merges on drift violations or metric ceiling breaches
 
+## All Repositories
+
+The complete Stackbilt-dev organization — public and private. For private repos, this page is the SoT for documentation.
+
+### Core Governance
+
+| Repo | Visibility | Package | Docs |
+|------|-----------|---------|------|
+| [charter](https://github.com/Stackbilt-dev/charter) | Public | `@stackbilt/cli` | [Charter Kit](/getting-started) · [CLI Reference](/cli-reference) |
+| [evidence-core](https://github.com/Stackbilt-dev/evidence-core) | Public | `@stackbilt/evidence-core` | [evidence-core](/evidence-core) |
+| [audit-chain](https://github.com/Stackbilt-dev/audit-chain) | Public | `@stackbilt/audit-chain` | [audit-chain](/audit-chain) |
+| [worker-observability](https://github.com/Stackbilt-dev/worker-observability) | Public | *(install from GitHub)* | [worker-observability](/worker-observability) |
+
+### Agent Infrastructure
+
+| Repo | Visibility | Docs |
+|------|-----------|------|
+| [aegis-oss](https://github.com/Stackbilt-dev/aegis-oss) | Public | [AEGIS Core](/aegis-core) |
+| [mindspring](https://github.com/Stackbilt-dev/mindspring) | Public | [MindSpring](/mindspring) |
+| [edgeclaw](https://github.com/Stackbilt-dev/edgeclaw) | Public | [EdgeClaw](/edgeclaw) |
+| [cc-taskrunner](https://github.com/Stackbilt-dev/cc-taskrunner) | Public | [cc-taskrunner](/cc-taskrunner) |
+
+### Infrastructure Libraries
+
+| Repo | Visibility | Package | Docs |
+|------|-----------|---------|------|
+| [llm-providers](https://github.com/Stackbilt-dev/llm-providers) | Public | `@stackbilt/llm-providers` | [llm-providers](/llm-providers) |
+| [feature-flags](https://github.com/Stackbilt-dev/feature-flags) | Public | `@stackbilt/feature-flags` | [feature-flags](/feature-flags) |
+| [contracts](https://github.com/Stackbilt-dev/contracts) | Public | `@stackbilt/contracts` | [contracts](/contracts) |
+
+### Platform (Private)
+
+| Repo | Visibility | Docs |
+|------|-----------|------|
+| stackbilt-web | Private | [stackbilt-web](/stackbilt-web) · [Stackbilder Platform](/platform) |
+| tarotscript | Private | [TarotScript](/tarotscript) |
+| img-forge | Private | [img-forge](/img-forge) |
+| stackbilt-mcp-gateway | Private | [MCP Gateway](/mcp) |
+| [stackbilt-build](https://github.com/Stackbilt-dev/stackbilt-build) | Public | [stackbilt-build](/stackbilt-build) |
+
+### Developer Tools
+
+| Repo | Visibility | Docs |
+|------|-----------|------|
+| [bildy](https://github.com/Stackbilt-dev/bildy) | Public | [bildy](/bildy) |
+| [ai-playbook](https://github.com/Stackbilt-dev/ai-playbook) | Public | [AI Playbook](/ai-playbook) |
+
+### Standalone Apps
+
+| Repo | Visibility | Docs |
+|------|-----------|------|
+| [social-sentinel](https://github.com/Stackbilt-dev/social-sentinel) | Public | [Social Sentinel](/social-sentinel) |
+| [n8n-transpiler](https://github.com/Stackbilt-dev/n8n-transpiler) | Public | [n8n-transpiler](/n8n-transpiler) |
+| [equity-scenario-sim](https://github.com/Stackbilt-dev/equity-scenario-sim) | Public | [equity-scenario-sim](/equity-scenario-sim) |
+
+### This Site
+
+| Repo | Visibility | URL |
+|------|-----------|-----|
+| [docs](https://github.com/Stackbilt-dev/docs) | Public | [docs.stackbilder.com](https://docs.stackbilder.com) |
+
+---
+
 ## Authentication
 
 Stackbilder issues two credential types, both accepted at every endpoint:

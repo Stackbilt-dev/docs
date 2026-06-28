@@ -15,7 +15,7 @@ lastVerified: "2026-06-27"
 **A persistent AI agent framework for Cloudflare Workers.**  
 **GitHub:** [Stackbilt-dev/aegis-oss](https://github.com/Stackbilt-dev/aegis-oss) · Apache-2.0
 
-Part of the [Stackbilt ecosystem](/ecosystem) alongside [Charter CLI](/getting-started), [evidence-core](/evidence-core), [audit-chain](/audit-chain), and [worker-observability](/worker-observability).
+Part of the [Stackbilt ecosystem](/ecosystem) alongside [Charter CLI](/getting-started), [evidence-core](/evidence-core), [audit-chain](/audit-chain), and [worker-observability](/worker-observability). For a lightweight personal assistant on the same Cloudflare primitives, see [EdgeClaw](/edgeclaw). [MindSpring](/mindspring) integrates with AEGIS via the `conversation-facts` NDJSON ingestion pipeline.
 
 Unlike chat-based AI tools that forget between sessions, AEGIS maintains persistent identity, memory, and state across every interaction. It runs on the Cloudflare Workers free tier with Workers AI as the base inference path. Claude and Groq are optional executor upgrades.
 
