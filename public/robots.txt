@@ -1,0 +1,35 @@
+User-agent: *
+Allow: /
+
+# AI / LLM crawlers — explicitly permitted
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# GEO discovery endpoints
+# llms.txt: machine-readable site summary for LLMs
+# schemamap.xml: JSON-LD schema endpoint index
+
+Sitemap: https://docs.stackbilder.com/sitemap-index.xml
+Schemamap: https://docs.stackbilder.com/schemamap.xml
+LLMs: https://docs.stackbilder.com/llms.txt
