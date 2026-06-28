@@ -212,6 +212,18 @@ Check the state of a generation job. Jobs are scoped to the authenticated tenant
 
 ---
 
+### Delete a Job
+
+```
+DELETE /v2/jobs/:id
+```
+
+Permanently removes the job record and its R2 object. Use this for immediate deletion ahead of the 30-day automatic purge.
+
+Returns `204 No Content` on success. Returns `404` if the job does not exist or belongs to a different tenant.
+
+---
+
 ### Retrieve an Asset
 
 ```
@@ -488,6 +500,20 @@ Requires a saved payment method (`billing_status.hasSavedCard: true`).
 **Credit packs** (Builder $12.50 / 500 cr, Studio $20.00 / 1,000 cr) — one-time top-ups for Cloudflare tiers. Available via `billing_purchase_credits` or [stackbilder.com/settings/billing](https://stackbilder.com/settings/billing). Per-model credit floor applies regardless of which pack funded the balance.
 
 When quota is exceeded, the API returns `429`. A soft warning appears at 80% usage.
+
+---
+
+## Retention Policy
+
+Authoritative source: `GET /v2/retention-policy`
+
+| Data | Storage | TTL | Early delete |
+|------|---------|-----|-------------|
+| Generated images | R2 | 30 days from creation | `DELETE /v2/jobs/:id` removes job record + R2 object immediately |
+| Transient inputs (source images, masks for img2img/inpainting) | R2 | 24 hours after job completion | — |
+| Job history + prompts | D1 | 30 days | `DELETE /v2/jobs/:id` |
+
+Deletion via `DELETE /v2/jobs/:id` is immediate and permanent — no recovery.
 
 ---
 
