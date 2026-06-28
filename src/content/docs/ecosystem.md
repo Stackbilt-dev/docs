@@ -239,7 +239,11 @@ The complete Stackbilt-dev organization — public and private. For private repo
 | tarotscript | Private | [TarotScript](/tarotscript) |
 | img-forge | Private | [img-forge](/img-forge) |
 | stackbilt-mcp-gateway | Private | [MCP Gateway](/mcp) |
+| edge-auth | Private | [edge-auth](/edge-auth) |
+| codebeast | Private | [CodeBeast](/codebeast) |
+| roundtable | Private | [Roundtable](/roundtable) |
 | [stackbilt-build](https://github.com/Stackbilt-dev/stackbilt-build) | Public | [stackbilt-build](/stackbilt-build) |
+| edgestack-v2 | Private | *(deprecated)* |
 
 ### Developer Tools
 

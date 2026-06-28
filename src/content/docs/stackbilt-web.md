@@ -51,10 +51,10 @@ Edge auth middleware validates sessions at the nearest POP via `AUTH_SERVICE` RP
 | Domain | Service | Repo |
 |--------|---------|------|
 | `stackbilder.com` | Platform frontend (this repo) | stackbilt-web |
-| `api.stackbilt.dev` | Backend API | edgestack-v2 |
-| `auth.stackbilt.dev` | Auth + billing | edge-auth |
-| `docs.stackbilt.dev` | Documentation | Stackbilt-dev/docs |
-| `blog.stackbilt.dev` | Blog | roundtable |
+| `api.stackbilt.dev` | Backend API | edgestack-v2 *(deprecated)* |
+| `auth.stackbilt.dev` | Auth + billing | [edge-auth](/edge-auth) |
+| `docs.stackbilt.dev` | Documentation | [Stackbilt-dev/docs](https://github.com/Stackbilt-dev/docs) |
+| `blog.stackbilt.dev` | Blog | [roundtable](/roundtable) |
 | `trust.stackbilder.com` | Trust page verifier | stackbilt-web (subdomain) |
 | `mcp.stackbilt.dev/mcp` | MCP gateway | stackbilt-mcp-gateway |
 
@@ -150,6 +150,135 @@ CSP is currently **Report-Only**. Flip to enforcing `Content-Security-Policy` af
 - `Cache-Control: private, max-age=3600` (no cross-identity edge caching)
 
 The `/img-forge` showcase page bypasses the proxy — images resolve at SSR time via the service binding as base64 data URIs so anonymous visitors can see the gallery.
+
+---
+
+## Evidence Engine (Pro)
+
+The hosted Evidence Engine wraps [`evidence-core`](/evidence-core) with D1-backed storage, a gap-fill LLM loop, tamper-evident receipts, and a Pro-gated UI. OSS library docs are in [evidence-core](/evidence-core); this section covers only the stackbilt-web layer.
+
+### Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/app/evidence` | Workspace — compose, attest, manage drafts |
+| `/app/evidence/compose` | Lazy-human pipeline: validate → gap-fill → attest |
+| `/app/evidence/library` | Asset CRUD (Pro-gated; free → `/pricing?gate=evidence-library`) |
+| `/api/v1/evidence/*` | REST API backing all three UI surfaces |
+
+### Pipeline
+
+Compose → gap-fill → attest → trust page:
+
+1. **Validate** — `evidence-core` scores content 0–100 against the selected Google policy version; detects gaps per EEAT pillar.
+2. **Gap-fill** — LLM polish loop (shared helper `src/lib/evidence-gap-fill.ts`). Injects library assets, redrafts, re-validates. Each run costs 1 `evidence_gap_fills` reservation. Monthly cap: 50 runs/mo for Pro/Team; free tier is gate-closed.
+3. **Attest** — creates an `evidence_publications` row with a `receipt_version` hash chain. `/api/v1/evidence/attest` accepts `runGapFill: true` to merge steps 2 + 3 in one call.
+4. **Trust page** — verifiable at `trust.stackbilder.com/evidence/:hash`. Re-hashes the row on render; surfaces as `tampered` on mismatch.
+
+### Receipt versions
+
+| Version | Product label | Adds |
+|---------|--------------|------|
+| v1 | — | Baseline |
+| v2 | — | `critique_hash` |
+| v3 | v2.1 | `plan_hash` (Collaborative Planning) |
+| v4 | v2.2 | `gap_fill_hash` binding the gap-fill pass |
+
+Unknown receipt versions surface as `tampered` — never silently downgrade to v1. See `src/lib/evidence-receipts.ts:verifyRow`.
+
+### Evidence library
+
+Pro-gated (free → `/pricing?gate=evidence-library`). Dogfood users on free-tier org get the Pro cap. Asset `content` shape: `{ text: "..." }` for all 8 types.
+
+| Tier | Asset cap |
+|------|-----------|
+| Free | 0 |
+| Pro | 50 |
+| Team | 50 |
+
+`LIBRARY_ASSET_LIMITS` in `src/lib/evidence-library.ts` is the single source of truth.
+
+### Domain vocabulary
+
+Evidence library assets are tagged with a domain. Food content uses three:
+
+| Tag | Covers |
+|-----|--------|
+| `food` | Recipes, cuisine, food history, grocery content, creator-facing food narratives |
+| `food_science` | Flavor chemistry, nutrition, food technology, academic research |
+| `food_regulation` | FDA/USDA/CFR citations, labeling law, food-safety regulation |
+
+### Internal telemetry
+
+Gap-fill runs write a trace row to `OBSERVE_DB` under the `internal:evidence-gap-fill` worker name. The `INTERNAL_WORKER_SQL_FILTER` prevents these rows from surfacing in tenant Observe UIs.
+
+---
+
+## Observe (Pro)
+
+The Observe dashboard wraps [`worker-observability`](/worker-observability) with D1-backed storage and a Pro-gated live UI. OSS client docs are in [worker-observability](/worker-observability); this section covers the server side.
+
+### ODD architecture
+
+Three pillars define the D1 schema and query surfaces:
+
+| Pillar | Purpose | Tables |
+|--------|---------|--------|
+| **Observability** | Execution-level visibility | `traces`, `metrics` |
+| **Debugging** | Causal trace + log correlation | `spans`, `logs` |
+| **Diagnostics** | Failure patterns + alerting | `alert_incidents` |
+
+Two cost-guard tables: `registered_workers` (worker cap) and `ingest_quotas` (daily event budget).
+
+### COGS containment
+
+D1 writes cost $1.00/M rows; each user request generates ~10 rows. Caps enforced at ingest:
+
+| Tier | Workers | Events/day/worker | Retention | Worst-case COGS |
+|------|---------|-------------------|-----------|-----------------|
+| Free | 1 | 10K | 24h | ~$0.10/mo |
+| Pro ($29) | 5 | 500K | 30d | ~$15/mo |
+| Team ($99) | 20 | 2M | 30d | ~$60/mo |
+
+`checkAndRegisterWorker()` returns 403 on worker cap; `checkAndIncrementEventBudget()` returns 429 on daily budget exceeded. Caps are defined in `TIER_LIMITS` in `src/lib/observe.ts`.
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/observe/ingest` | Unified batch ingest: `{ service, metrics?, spans?, logs?, alerts? }`. Pro-gated. 64KB limit. |
+| `GET` | `/api/observe/summary` | Per-worker stats: error rate, p95, request count |
+| `GET` | `/api/observe/traces` | Paginated trace list with filters |
+| `GET` | `/api/observe/traces/:id` | Trace detail with spans + correlated logs |
+| `GET` | `/api/observe/alerts` | Alert incidents list |
+
+All read endpoints apply `INTERNAL_WORKER_SQL_FILTER` (`worker_name NOT LIKE 'internal:%'`) — internal rows never appear in tenant UIs. Any new Observe query touching `traces`/`spans`/`logs` by worker_name **must** apply this filter.
+
+### Retention
+
+Hourly cron trigger → `src/worker.ts:handleScheduled()` batch-deletes expired rows across all 5 telemetry tables (cap: 10K deletes per table per run). All rows carry `expires_at` for tier-aware TTL.
+
+---
+
+## Consultations (CTO + CISO)
+
+CTO and CISO AI advisors. Live as of 2026-04-20, Pro + dogfood-gated.
+
+### Route tree
+
+`/agents/[role]` is the canonical public entry point. It resolves auth and entitlement, then redirects:
+
+| State | Redirect |
+|-------|---------|
+| Entitled (Pro/Team/dogfood) | `/app/consult/[role]` |
+| Unauthenticated | `/consult/[role]` |
+| Authenticated but not entitled | `/consult/[role]?gate=<reason>` |
+
+`/app/consult/[role]` is the authenticated session UI. `/consult/[role]` is the public marketing/gate page. `/agents/[role]` should be used in all external links — it handles the redirect logic so the destination stays stable as entitlement rules change.
+
+### Sidebar
+
+Consultations is one tools registry entry (`src/lib/tools.ts`) but renders as two sidebar leaves under **Advise**: CISO and CTO, each pointing to `/agents/ciso` and `/agents/cto` respectively.
 
 ---
 
