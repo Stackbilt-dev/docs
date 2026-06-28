@@ -5,7 +5,7 @@ section: "platform"
 order: 3
 color: "#818cf8"
 tag: "03"
-lastVerified: "2026-06-21"
+lastVerified: "2026-06-27"
 sourceSlug: "tarotscript-reference"
 ---
 
@@ -74,7 +74,20 @@ Intent classification via the `intent-classify` spread. Returns a Cloudflare sta
 | `deck_alias` | string | — | Alias for injected deck (required when `deck` is set) |
 | `deck_ref` | string | — | R2 tenant deck slug to resolve instead of inline `deck` |
 
-**Response** — classification result with `pattern`, `confidence`, `traitVector`, and vocab signal.
+**Response**
+
+| Field | Type | Description |
+|---|---|---|
+| `classification.pattern` | string | Matched stack pattern name (e.g. `"Stripe Webhook"`) |
+| `classification.confidence` | string | `"high"` / `"medium"` / `"low"` |
+| `classification.method` | string | `"vocab"` (Signal card threshold met) or `"relevance"` (fell through to scoring) |
+| `classification.vocab_signal` | string | Name of the Signal card that scored highest |
+| `classification.vocab_score` | number | Signal card score (≥ 4 triggers vocab routing) |
+| `classification.runner_up_vocab_signal` | string \| null | Second-highest Signal card (v2+ receipts) |
+| `classification.runner_up_vocab_score` | number \| null | Runner-up score (v2+ receipts) |
+| `classification.relevance_score` | number | Raw relevance score used when vocab routing is bypassed |
+| `traits` | object | Full trait vector for the matched pattern |
+| `tier2_recommended` | boolean | Whether a Tier-2 scaffold is advised |
 
 ---
 
@@ -273,6 +286,7 @@ Returns the tool manifest.
 | Method | Route | Description |
 |---|---|---|
 | `GET` | `/telemetry/scaffold` | Scaffold run metrics and pattern distribution |
+| `GET` | `/telemetry/classify` | Classification receipt corpus: confidence distribution, fragility surface (relevance-routed receipts), signal drift pairs. Accepts `?limit=N`. |
 | `GET` | `/telemetry/sim` | Simulation run metrics |
 | `GET` | `/telemetry/harness` | Harness DAG execution metrics |
 

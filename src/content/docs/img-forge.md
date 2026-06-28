@@ -126,7 +126,7 @@ Submit a generation request. Returns immediately with a job ID (async) or waits 
 |-------|------|----------|---------|-------------|
 | `prompt` | string | Yes | — | Text description, 1–2000 characters |
 | `quality_tier` | string | No | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
-| `openai_model` | string | No | — | OpenAI model override: `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, `gpt-image-2`. Bills at ultra (10 cr). Community-locked until milestone. |
+| `openai_model` | string | No | — | OpenAI model override: `gpt-image-1-mini`, `gpt-image-1` (retiring Oct 23 2026), `gpt-image-1.5`, `gpt-image-2`. Bills at ultra (10 cr). Requires Pro. `gpt-image-1.5` and `gpt-image-2` additionally require community milestone. |
 | `cf_model` | string | No | — | CF Workers AI model override for draft/standard/premium tiers. See `GET /v2/models` for selectable IDs. |
 | `model` | string | No | — | Gemini model override: `gemini-3.1-flash-image-preview` or `gemini-3-pro-image-preview`. Community-locked. |
 | `aspect_ratio` | string | No | `1:1` | `1:1`, `3:2`, `2:3`, `4:3`, `3:4`, `16:9`, `9:16`, `21:9`, `4:5`, `5:4` |
@@ -244,20 +244,20 @@ Returns `{ "status": "ok", "version": "0.2.0" }`.
 | `ultra` | 10 cr | Google | Gemini 3.1 Flash Image Preview | Yes | No |
 | `ultra_plus` | 20 cr | Google | Gemini 3 Pro Image Preview | Yes | No |
 
-`ultra` and `ultra_plus` are **community-locked** — see [Community Unlock](#community-unlock) below.
+`ultra` and `ultra_plus` require a **Pro subscription** and are additionally **community-milestone-locked** — both gates must pass. See [Community Unlock](#community-unlock) below.
 
 ### Selectable model overrides
 
 Pass alongside `quality_tier` to override the default model for a tier.
 
-**OpenAI models** — pass via `openai_model`. All bill at ultra (10 cr). Community-locked.
+**OpenAI models** — pass via `openai_model`. All bill at ultra (10 cr) currently; `credits_per_request` per model is tracked in #164 for post-launch. Require Pro subscription. `gpt-image-1.5` and `gpt-image-2` are additionally community-milestone-locked.
 
 | `openai_model` value | Notes |
 |---------------------|-------|
 | `gpt-image-1-mini` | Fast, budget-friendly |
-| `gpt-image-1` | High-fidelity (deprecating Oct 23, 2026) |
-| `gpt-image-1.5` | Enhanced fidelity |
-| `gpt-image-2` | Highest quality; supports arbitrary aspect ratios |
+| `gpt-image-1` | High-fidelity — **OpenAI retires Oct 23, 2026.** New builds: use `gpt-image-1.5` or `gpt-image-2`. |
+| `gpt-image-1.5` | Enhanced fidelity. Community-locked. |
+| `gpt-image-2` | Highest quality; supports arbitrary aspect ratios. Community-locked. |
 
 **Cloudflare models** — pass via `cf_model`. Bill at the `quality_tier` you specify. No community lock.
 
@@ -280,11 +280,16 @@ Call `GET /v2/models` for the full live list with availability flags.
 
 ## Community Unlock
 
-OpenAI and Gemini models are gated behind a community funding milestone. These models cost 5–20× more per image than the Cloudflare stack — the gate exists because the math has to work first.
+OpenAI (`gpt-image-1.5`, `gpt-image-2`) and Gemini (`ultra`, `ultra_plus`) models are gated behind two independent conditions:
 
-**What's live now:** All 5 Cloudflare tiers (draft through premium) work for everyone with no unlock required.
+1. **Subscription gate** — requires an active Pro (or higher) subscription. Free accounts and credit-pack-only buyers cannot access these tiers regardless of unlock state.
+2. **Community milestone gate** — the model class must be unlocked before any Pro subscriber can use it. The milestone is funded by committed revenue (credit pack purchases + Agency subscriptions), not raw signup count.
 
-**What unlocks:** OpenAI and Gemini models activate for the entire community when the funded support milestone is reached. The trigger is committed revenue (credit pack purchases + Agency subscriptions), not raw signup count.
+Both gates must pass. A Pro subscriber cannot use Gemini ultra until the milestone is hit. A credit-pack-only buyer cannot use these tiers even after the milestone hits.
+
+**What's live now:** All Cloudflare tiers (draft, standard, premium) work for all plans with no unlock required. Credit packs alone are sufficient.
+
+**What unlocks:** Pro subscribers gain access to OpenAI/Gemini models when the funded revenue milestone is reached.
 
 **How to see progress:** `GET /v2/models` returns `unlock_status` on every frontier model:
 
@@ -299,7 +304,9 @@ OpenAI and Gemini models are gated behind a community funding milestone. These m
 }
 ```
 
-`funded_basis: true` signals that the real trigger is committed dollars. When `type` changes to `"unlocked"`, the model is live with no further action needed.
+`display_current` and `display_goal` are **backer headcounts** (number of accounts that have purchased a credit pack or Agency subscription). `funded_basis: true` is a developer signal that the actual unlock trigger is a committed-revenue threshold, not the raw headcount — the displayed numbers are always headcount for simplicity and to avoid exposing financial data.
+
+When `type` changes to `"unlocked"`, the model is live for Pro subscribers with no further action needed.
 
 **For agents:** `list_models` via MCP surfaces this information automatically, including the `agent_hint` that agents can relay to their operators.
 
@@ -397,7 +404,7 @@ Generate an image from a text prompt. Returns synchronously with the completed a
 |-----------|------|---------|-------------|
 | `prompt` | string | — | Text description, 1–2000 characters |
 | `quality_tier` | string | `standard` | `draft`, `standard`, `premium`, `ultra`, `ultra_plus` |
-| `openai_model` | string | — | `gpt-image-1-mini`, `gpt-image-1`, `gpt-image-1.5`, or `gpt-image-2`. All bill at ultra (10 cr). Community-locked. |
+| `openai_model` | string | — | `gpt-image-1-mini`, `gpt-image-1` (retiring Oct 23 2026), `gpt-image-1.5`, `gpt-image-2`. All bill at ultra (10 cr). Requires Pro. `gpt-image-1.5` and `gpt-image-2` additionally community-locked. |
 | `cf_model` | string | — | CF Workers AI model override. See `list_models`. |
 | `model` | string | — | Gemini model override: `gemini-3.1-flash-image-preview` or `gemini-3-pro-image-preview`. Community-locked. |
 | `aspect_ratio` | string | `1:1` | `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, etc. |
@@ -466,14 +473,17 @@ Requires a saved payment method (`billing_status.hasSavedCard: true`).
 
 | Plan | Monthly Images | Quality Tiers | Credits |
 |------|---------------|---------------|---------|
-| Free | 5 | Draft through Premium | — |
-| Pro | 100 | All 5 tiers | — |
-| Team | Pooled | All 5 tiers | — |
-| Agency | Unlimited | All 5 tiers | 4,000/mo rollover¹ |
+| Free | 5 | Draft, Standard, Premium | — |
+| Credit pack only | By credits | Draft, Standard, Premium | ✅ |
+| Pro | 100 | Draft–Premium always; Ultra/Ultra+ after community milestone | — |
+| Team | Pooled | Same as Pro | — |
+| Agency | Unlimited | Same as Pro | 4,000/mo rollover¹ |
 
 ¹ **Agency** ($75/mo) — credits accumulate indefinitely while active; unused balance carries forward each renewal. Expire 45 days after cancellation.
 
-**Credit packs** — one-time top-ups available to any plan via `billing_purchase_credits` or [stackbilder.com/settings/billing](https://stackbilder.com/settings/billing).
+**Ultra and OpenAI models require Pro (or higher).** Credit packs alone do not grant access to these tiers regardless of pack size. The community milestone additionally gates whether the models are active at all — even Pro subscribers cannot use them until the milestone is hit.
+
+**Credit packs** (Builder $12.50 / 500 cr, Studio $20.00 / 1,000 cr) — one-time top-ups for Cloudflare tiers. Available via `billing_purchase_credits` or [stackbilder.com/settings/billing](https://stackbilder.com/settings/billing). Per-model credit floor applies regardless of which pack funded the balance.
 
 When quota is exceeded, the API returns `429`. A soft warning appears at 80% usage.
 

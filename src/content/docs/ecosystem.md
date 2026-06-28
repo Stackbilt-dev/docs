@@ -16,10 +16,10 @@ Stackbilder is built on multiple complementary tools that enforce governance acr
 | Tool | License | Role |
 |------|---------|------|
 | **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
-| **AEGIS** (`@stackbilt/aegis-core`) | Apache-2.0 (open source) | Inter-agent orchestration framework and MCP-based task management |
-| **evidence-core** (`@stackbilt/evidence-core`) | Apache-2.0 (open source) | E-E-A-T gap detection and scoring library. Three policy presets (Google Nov 2024 default). Usable standalone. |
-| **audit-chain** (`@stackbilt/audit-chain`) | Apache-2.0 (open source) | Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1). SHA-256 hash-chained records. |
-| **worker-observability** (`@stackbilt/worker-observability`) | Apache-2.0 (open source) | ODD-driven telemetry SDK for Cloudflare Workers. Metrics, traces, spans, SLI/SLO. |
+| **[AEGIS Core](/aegis-core)** (`@stackbilt/aegis-core`) | Apache-2.0 (open source) | Persistent AI agent framework — multi-tier memory, autonomous goals, dreaming cycles, MCP native |
+| **[evidence-core](/evidence-core)** (`@stackbilt/evidence-core`) | Apache-2.0 (open source) | E-E-A-T gap detection and scoring library. Three policy presets (Google Nov 2024 default). Usable standalone. |
+| **[audit-chain](/audit-chain)** (`@stackbilt/audit-chain`) | Apache-2.0 (open source) | Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1). SHA-256 hash-chained records. |
+| **[worker-observability](/worker-observability)** ([GitHub](https://github.com/Stackbilt-dev/worker-observability)) | Apache-2.0 (open source) | ODD-driven telemetry SDK for Cloudflare Workers. Metrics, traces, spans, SLI/SLO. Not yet published to npm — install from source. |
 | **Stackbilder** | Commercial | Unified platform on `stackbilder.com` — architecture generation, scaffold engine, Evidence Engine, Content Provenance, Worker Observability, Consultations, img-forge |
 
 Charter and AEGIS are the open-source foundations. Stackbilder is the commercial platform that wraps them.
@@ -92,14 +92,14 @@ Charter also ships **ADF (Attention-Directed Format)** - a modular, AST-backed c
 
 ```bash
 npm install --save-dev @stackbilt/cli
-npx charter setup --preset fullstack --ci github --yes
+npx charter bootstrap --preset fullstack --ci github --yes
 npx charter adf init    # scaffold .ai/ context directory
 ```
 
-**Governance commands:** `validate`, `drift`, `audit`, `classify`, `hook install`.
-**ADF commands:** `adf init`, `adf fmt`, `adf patch`, `adf bundle`, `adf sync`, `adf evidence`.
+**Governance commands:** `bootstrap`, `validate`, `drift`, `audit`, `classify`, `hook install`, `score`, `serve`, `context-refresh`.
+**ADF commands:** `adf init`, `adf fmt`, `adf patch`, `adf create`, `adf bundle`, `adf sync`, `adf evidence`, `adf migrate`, `adf metrics`.
 
-For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/stackbilt-dev/charter-kit/blob/main/papers/context-as-code-v1.1.md).
+For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/Stackbilt-dev/charter/blob/main/papers/context-as-code-v1.1.md).
 <!-- DOCSYNC:END:charter-oss-ecosystem -->
 
 ## Stackbilder: Architecture + Scaffold + Trust
@@ -145,7 +145,7 @@ The platform maintains a ledger of approved technology patterns. These are injec
 
 ## Worker Observability: ODD-Driven Monitoring
 
-`@stackbilt/worker-observability` is the OSS library ([Apache-2.0](https://github.com/Stackbilt-dev/worker-observability)). The hosted Pro product on stackbilder.com wraps it with D1 storage and a dashboard.
+`worker-observability` is the OSS library ([Apache-2.0, GitHub](https://github.com/Stackbilt-dev/worker-observability)) — not yet published to npm; install from source. The hosted Pro product on stackbilder.com wraps it with D1 storage and a dashboard.
 
 ### ODD Pillars (Observability → Debugging → Diagnostics)
 
@@ -166,6 +166,11 @@ The platform maintains a ledger of approved technology patterns. These are injec
 | Alert history | — | Yes |
 
 ### Integration (3 lines)
+
+> The package is not yet published to npm. Install directly from GitHub:
+> ```bash
+> npm install github:Stackbilt-dev/worker-observability
+> ```
 
 ```ts
 import { createMonitoring } from '@stackbilt/worker-observability';
