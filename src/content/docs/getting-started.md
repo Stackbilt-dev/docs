@@ -155,6 +155,14 @@ What this shows:
 # Scaffold .ai/ with starter modules
 charter adf init
 
+# Letter-grade AI-readiness audit + badge
+charter score
+charter score --badge --write
+
+# Render .ai/ to CLAUDE.md, AGENTS.md, .cursorrules, GEMINI.md (CI drift gate)
+charter adf compile --target all --write
+charter adf compile --target all --check
+
 # Reformat to canonical form
 charter adf fmt .ai/core.adf --write
 
@@ -184,12 +192,16 @@ charter serve
 
 - **Modular AI context** -- trigger-routed `.ai/` modules replace monolithic config files
 - **Five-minute migration** -- classify and route existing CLAUDE.md / .cursorrules / GEMINI.md rules automatically
-- **MCP server** -- `charter serve` exposes your ADF context as an MCP server; Claude Code can query constraints, architectural decisions, and recent changes without reading raw files
+- **Multi-vendor compile** -- `charter adf compile --target all` renders `.ai/` to CLAUDE.md, AGENTS.md, .cursorrules, and GEMINI.md; `--check` gates CI on drift
+- **MCP server** -- `charter serve` exposes your ADF context as an MCP server; `charter_brief` replaces 15–30 cold-boot discovery calls
+- **AI-readiness audit** -- `charter score` grades your repo A–F across agent config, grounding, architecture, testing, governance, and freshness; `--badge --write` emits a shields.io endpoint for your README
 - **Evidence-based governance** -- metric ceilings with auto-measurement, structured pass/fail reports, CI gating
 - **Self-regulating** -- pre-commit hooks enforce constraints before code lands
 - **Commit governance** -- validate `Governed-By` and `Resolves-Request` trailers, score commit risk
 - **Drift detection** -- scan for stack drift against blessed patterns
 - **Stable JSON output** -- every command supports `--format json` with `nextActions` hints for agent workflows
+
+ADF is an open specification at [adf-spec/adf](https://github.com/adf-spec/adf) (Apache-2.0, vendor-neutral org). Charter is the reference implementation. A conformance suite is in progress.
 
 ## Install
 
@@ -230,7 +242,19 @@ Add Charter's own MCP server to `.claude/settings.json`:
 }
 ```
 
-Claude Code can then call `getProjectContext`, `getArchitecturalDecisions`, `getProjectState`, and `getRecentChanges` directly — no manual `adf bundle` needed in the conversation.
+Claude Code can call these tools directly — no manual `adf bundle` needed:
+
+| Tool | Description |
+|------|-------------|
+| `charter_brief` | **Call first.** Pre-digested repo brief — routes, hotspots, governance. Replaces 15–30 cold-boot discovery calls. |
+| `charter_context` | Session continuity snapshot reader/refresher. |
+| `getProjectContext` | ADF bundle resolved for the current task. |
+| `getProjectState` | Constraint validation results across all loaded modules. |
+| `getArchitecturalDecisions` | Load-bearing constraints from `core.adf`. |
+| `getRecentChanges` | Recent git commits classified by type. |
+| `charter_blast` | Blast radius for one or more source files. |
+| `charter_surface` | API surface — HTTP routes and D1/SQLite schema tables. |
+| `updateEvidence` | Write-back: measures metrics, patches ADF, returns before/after diff. |
 
 ### Agent Workflow
 

@@ -1,6 +1,6 @@
 ---
 title: "CLI Reference"
-description: "Complete command reference for Charter CLI. Every command, flag, and option for governance validation, drift detection, and ADF context compilation."
+description: "Complete command reference for Charter CLI. Every command, flag, and option for governance validation, drift detection, ADF context compilation, and codebase analysis."
 section: "charter"
 order: 3
 color: "#f59e0b"
@@ -89,11 +89,14 @@ One-command repo onboarding. Orchestrates detect + setup + ADF init + install + 
 ```bash
 npx charter bootstrap                                         # interactive
 npx charter bootstrap --preset worker --ci github --yes       # fully automated
+npx charter bootstrap --preset rust-wasm --ci github --yes    # Rust/WASM project
+npx charter bootstrap --security-sensitive                    # security posture baseline
 npx charter bootstrap --skip-install --skip-doctor            # minimal
 ```
 
 - `--ci github` — generate GitHub Actions governance workflow
-- `--preset <worker|frontend|backend|fullstack|docs>` — stack preset
+- `--preset <worker|frontend|backend|fullstack|docs|rust-wasm>` — stack preset
+- `--security-sensitive` — generate `SECURITY.md`, seed hard-fail drift denies in `.charter/patterns/security-deny.json`, warn in `doctor` when no `security*` or `l4*` test file exists
 - `--skip-install` — skip dependency installation phase
 - `--skip-doctor` — skip health check phase
 - `-y, --yes` — accept all prompts
@@ -106,12 +109,13 @@ Bootstraps `.charter/` config and optionally writes CI workflow scaffolding. For
 npx charter setup --detect-only --format json
 npx charter setup --ci github --yes
 npx charter setup --preset fullstack --ci github --yes
+npx charter setup --preset rust-wasm --ci github --yes
 ```
 
 Setup-specific options:
 
 - `--ci github` — generate GitHub Actions governance workflow
-- `--preset <worker|frontend|backend|fullstack|docs>` — stack preset
+- `--preset <worker|frontend|backend|fullstack|docs|rust-wasm>` — stack preset
 - `--detect-only` — preview detection results without writing files
 - `--no-dependency-sync` — skip rewriting `@stackbilt/cli` devDependency
 
@@ -137,6 +141,28 @@ npx charter doctor --ci --format json # CI mode: exit 1 on warnings
 - `--adf-only` — run only ADF readiness checks, skip Charter config validation
 - `--ci` — non-interactive, exits with policy violation code on warnings
 
+#### Source LOC budgets
+
+To cap runtime source files from quietly becoming god-objects, declare per-path LOC budgets in `.charter/config.json`. `charter doctor` measures matching files and reports:
+
+```jsonc
+{
+  "locBudgets": {
+    "defaultWarn": 300,
+    "defaultFail": 600,
+    "paths": [
+      { "pattern": "src/index.ts", "warn": 200, "fail": 500, "reason": "entry should stay thin" },
+      { "pattern": "src/**", "warn": 300, "fail": 600 }
+    ]
+  }
+}
+```
+
+- Patterns match repo-relative paths. `*` within a single segment, `**` across segments. First matching rule wins — list more specific patterns first.
+- A file over its `fail` ceiling is a `WARN` check — under `--ci` exits non-zero. Over `warn` but within `fail` is advisory (`INFO`) and never fails CI.
+- `"enabled": false` keeps the config block without enforcing it.
+- No budgets configured: `doctor` emits a soft non-blocking `INFO` nudge.
+
 ### charter why
 
 Prints a quick explanation of Charter's governance value and adoption ROI.
@@ -144,6 +170,31 @@ Prints a quick explanation of Charter's governance value and adoption ROI.
 ```bash
 npx charter why
 ```
+
+### charter score
+
+Letter-grade AI-readiness audit across six dimensions: agent config, grounding, architecture, testing, governance, and freshness.
+
+```bash
+npx charter score                  # print letter-grade audit
+npx charter score --badge --write  # emit shields.io payload → .charter/badge.json
+```
+
+`--badge --write` emits a [shields.io endpoint](https://shields.io/badges/endpoint-badge) payload for use in README badges:
+
+```json
+{"schemaVersion":1,"label":"agent context","message":"A (92)","color":"brightgreen"}
+```
+
+Grade color scale: A = brightgreen, B = green, C = yellowgreen, D = yellow, F = red.
+
+To add the badge to your README (replace `<org>`, `<repo>`, `<branch>`):
+
+```markdown
+[![Agent context](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2F<org>%2F<repo>%2F<branch>%2F.charter%2Fbadge.json)](https://github.com/Stackbilt-dev/charter)
+```
+
+---
 
 ## ADF Commands
 
@@ -161,9 +212,9 @@ npx charter adf init --emit-pointers          # generate thin pointer files
 npx charter adf init --module testing         # add a single module to existing .ai/
 ```
 
-- `--ai-dir <dir>` — custom directory path (default: `.ai`)
-- `--force` / `--yes` — overwrite existing manifest
-- `--emit-pointers` — generate thin pointer files (`CLAUDE.md`, `.cursorrules`, `agents.md`)
+- `--ai-dir <dir>` — custom directory path (default: `.ai`). Resolved to an absolute path at runtime.
+- `--force` — overwrite existing files. Without this flag, existing `.adf` files are skipped; only missing `manifest.adf` is written.
+- `--emit-pointers` — generate thin pointer files (`CLAUDE.md`, `.cursorrules`, `agents.md`). Generated `CLAUDE.md` includes a `## Session Start` section with guidance to call `charter_context` MCP tool at session start.
 - `--module <name>` — add a single module to existing `.ai/` (delegates to `adf create`)
 
 **Default scaffolding** (worker/frontend/backend/fullstack presets):
@@ -185,6 +236,17 @@ npx charter adf init --module testing         # add a single module to existing 
 | `state.adf` | Current session state |
 | `decisions.adf` | ADR and decision tracking (triggers: ADR, decision, rationale) |
 | `planning.adf` | Roadmap and milestone tracking (triggers: plan, milestone, phase, roadmap) |
+
+**Rust/WASM preset** (`--preset rust-wasm`):
+
+| File | Purpose |
+|------|---------|
+| `manifest.adf` | Rust/WASM-specific routing (triggers: Cargo, WASM, wasm-pack, wasm-bindgen, cdylib, wasm32) |
+| `core.adf` | Universal constraints and metrics |
+| `state.adf` | Current session state |
+| `rust-wasm.adf` | Library constraints: pure exports, dual crate-type, wasm-pack build/test gates, `pkg/` publish boundary |
+
+`charter bootstrap --preset rust-wasm` also scaffolds: `Cargo.toml` (cdylib + rlib), `src/lib.rs`, `tests/integration.rs`, root `package.json`, `.gitignore`, and `.github/workflows/ci.yml` (Rust toolchain + wasm32 target + wasm-pack test + build steps).
 
 ### charter adf create
 
@@ -220,6 +282,22 @@ npx charter adf migrate --no-backup              # skip .pre-adf-migrate.bak fil
 - `--no-backup` — skip creating backup files
 - `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
 
+### charter adf compile
+
+Renders `.ai/` ADF modules into vendor-specific config files. ADF is the source of truth; vendor files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `GEMINI.md`) are build artifacts.
+
+```bash
+npx charter adf compile --target claude        # render CLAUDE.md to stdout
+npx charter adf compile --target all --write   # write all vendor files
+npx charter adf compile --target all --check   # CI drift gate: exit 1 if any vendor file is stale
+```
+
+- `--target <claude|codex|cursor|gemini|all>` — which vendor file(s) to compile
+- `--write` — write to disk instead of stdout
+- `--check` — CI mode: compare compiled output to existing files, exit 1 if stale
+
+Use `--check` in CI to catch hand-edits to generated vendor files before they drift from the ADF source. Edit `.ai/` once, compile for all targets.
+
 ### charter adf fmt
 
 Parses and reformats ADF files to canonical form. Enforces emoji decorations, canonical section ordering, and 2-space indent.
@@ -239,6 +317,8 @@ npx charter adf patch .ai/state.adf --ops-file patches.json
 ```
 
 **Operations:** `ADD_BULLET`, `REPLACE_BULLET`, `REMOVE_BULLET`, `ADD_SECTION`, `REPLACE_SECTION`, `REMOVE_SECTION`, `UPDATE_METRIC`.
+
+With `--format json`, output includes a `changes[]` array with per-op before/after values.
 
 ### charter adf bundle
 
@@ -298,7 +378,7 @@ npx charter adf metrics recalibrate --auto-rationale --format json     # machine
 - `--dry-run` — preview recalibration without writing files
 - `--ai-dir <dir>` — custom `.ai/` directory (default: `.ai`)
 
-**Behavior:** Parses all METRICS sections across manifest modules, measures current source file line counts, calculates new ceilings as `ceil(current × (1 + headroom / 100))`, and appends entries to the `BUDGET_RATIONALES` section with format:
+**Behavior:** Calculates new ceilings as `ceil(current × (1 + headroom / 100))` and appends entries to `BUDGET_RATIONALES`:
 
 ```
 {metric}_{ISO_DATE}: {old} -> {new}, ceiling {oldCeiling} -> {newCeiling}; {rationale}
@@ -306,60 +386,171 @@ npx charter adf metrics recalibrate --auto-rationale --format json     # machine
 
 One of `--reason` or `--auto-rationale` is required.
 
-### charter adf tidy
+---
 
-Scans vendor config files (`CLAUDE.md`, `.cursorrules`, `agents.md`, `GEMINI.md`, `copilot-instructions.md`) for content added beyond the thin pointer, classifies and routes it to the appropriate ADF modules, and restores the thin pointer.
+## Analyze Commands
 
-```bash
-npx charter adf tidy --dry-run                # preview what would be tidied
-npx charter adf tidy                          # tidy all vendor files
-npx charter adf tidy --source CLAUDE.md       # tidy a single file
-npx charter adf tidy --dry-run --ci           # CI: exit 1 if bloat found
-npx charter adf tidy --verbose                # show per-item routing trace
-```
+### charter blast
 
-- `--dry-run` — preview changes without writing files
-- `--source <file>` — tidy a specific vendor file instead of scanning all
-- `--ci` — exit 1 if bloat is found (with `--dry-run`, for pre-commit gating)
-- `--verbose` — show per-item routing trace with candidate scores
-- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
-
-JSON output includes per-file status, item routing breakdown, module size warnings, and (when verbose) per-item routing traces with candidate scores.
-
-### charter adf populate
-
-Auto-fills ADF context files from codebase signals: `package.json`, `README.md`, and stack detection. Replaces scaffold placeholder content with project-specific context. Skips sections that have already been customized.
+Compute the blast radius of a change: which files transitively depend on the given seed files?
 
 ```bash
-npx charter adf populate                     # populate from codebase signals
-npx charter adf populate --dry-run           # preview without writing
-npx charter adf populate --force             # overwrite customized sections
-npx charter adf populate --format json       # machine-readable output
+npx charter blast src/kernel/dispatch.ts                    # default depth 3
+npx charter blast src/a.ts src/b.ts --depth 4               # multi-seed, custom depth
+npx charter blast src/foo.ts --format json                  # structured output
+npx charter blast src/foo.ts --root ./packages/server       # scan a subdirectory
 ```
 
-- `--dry-run` — preview changes without writing files
-- `--force` — overwrite sections that have already been customized
-- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
+- `<file>` — one or more seed file paths (required, positional)
+- `--depth <n>` — max BFS depth through the reverse dependency graph (default: `3`)
+- `--root <dir>` — project root to scan (default: `.`)
+- `--format json` — structured JSON output
 
-Populates `CONTEXT` in `core.adf`, `backend.adf`, and `frontend.adf`, plus `STATE` in `state.adf`. Adds stack-specific constraints (ESM imports, Cloudflare Workers APIs, pnpm workspace protocol) when detected.
+**Output includes:** `affected` (files that transitively import the seeds), `hotFiles` (top 20 most-imported architectural hubs), `summary.totalAffected`, `summary.seedCount`, `summary.depthHistogram`.
 
-### charter adf context
+**Governance signal:** blast radius ≥20 files triggers a `CROSS_CUTTING` warning — escalate wide-reaching changes to architectural review.
 
-Resolves ADF modules based on file paths and/or explicit keywords. Maps file system structure to domain keywords for module resolution.
+Deterministic, zero runtime dependencies, no LLM calls. Auto-detects tsconfig path aliases including monorepo `@scope/package` imports.
+
+### charter surface
+
+Extract the API surface of a project: HTTP routes and database schema tables.
 
 ```bash
-npx charter adf context --files src/components/Button.tsx,src/api/handler.ts
-npx charter adf context --keywords "react,api"
-npx charter adf context --files src/api/handler.ts --keywords "deploy" --format json
-npx charter adf context --files src/components/Button.tsx --bundle   # output merged context
+npx charter surface                                 # text summary
+npx charter surface --format json                   # machine-readable
+npx charter surface --markdown                      # for .ai/surface.adf injection
+npx charter surface --root ./packages/worker        # scan a subdirectory
+npx charter surface --schema db/schema.sql          # explicit schema path
 ```
 
-- `--files <path,...>` — comma-separated file paths to extract keywords from
-- `--keywords <kw,...>` — comma-separated explicit keywords for module resolution
-- `--bundle` — output full merged context instead of just the module list
-- `--ai-dir <dir>` — path to ADF directory (default: `.ai`)
+- `--root <dir>` — project root to scan (default: `.`)
+- `--schema <path>` — explicit schema SQL file (default: auto-detect `*schema*.sql`)
+- `--markdown` / `--md` — emit markdown for `.ai/surface.adf` or agent brief injection
+- `--format json` — structured JSON
 
-Requires at least one of `--files` or `--keywords`. File path keyword extraction uses extension and directory signals (e.g., `.tsx` maps to `react, ui, frontend`; `/api/` maps to `api, backend`).
+**Detects:** Hono, Express, itty-router routes; D1/SQLite `CREATE TABLE` statements with column types and flags. Ignores test files.
+
+**Use cases:** breaking-change detection (diff JSON before/after PR), auto-generating `.ai/surface.adf` context, mission brief fingerprinting for autonomous task runners.
+
+---
+
+## charter serve
+
+Expose ADF project context as an MCP server over stdio, for use with Claude Code, Codex, and Cursor.
+
+```bash
+npx charter serve                             # stdio MCP server (default)
+npx charter serve --ai-dir /abs/path/.ai      # explicit ADF directory
+npx charter serve --name "my-project"         # override the server name
+```
+
+- `--ai-dir <dir>` — path to the `.ai/` ADF directory (default: `.ai`). **Always resolved to an absolute path at startup.**
+- `--name <name>` — override the MCP server name (default: inferred from `core.adf` `PROJECT` section or directory name)
+
+### Wiring in `.mcp.json`
+
+```json
+{
+  "mcpServers": {
+    "charter": {
+      "command": "npx",
+      "args": ["@stackbilt/cli", "serve", "--ai-dir", "/absolute/path/to/.ai"]
+    }
+  }
+}
+```
+
+Use an absolute path for `--ai-dir`. A relative path resolves against the MCP host's working directory at spawn time, which may not be the project root.
+
+### Registered MCP tools
+
+| Tool | Description |
+|------|-------------|
+| `charter_brief` | **Call first.** Pre-digested repo brief — routes, hotspots, governance. Replaces 15–30 cold-boot discovery calls. |
+| `charter_context` | Session continuity snapshot reader/refresher (`.ai/context.snapshot.json`). Use `refresh=true` to run `context-refresh` before reading. |
+| `getProjectContext` | ADF bundle resolved for a given task or trigger keywords. |
+| `getProjectState` | Constraint validation results across all loaded modules. |
+| `getArchitecturalDecisions` | Load-bearing constraints from `core.adf`. |
+| `getRecentChanges` | Recent git commits classified by type. |
+| `charter_blast` | Blast radius for one or more source files. |
+| `charter_surface` | API surface — HTTP routes and D1/SQLite schema tables. |
+| `updateEvidence` | **Write-back.** Measures metric source files, patches ADF with current values, returns before/after diff + live constraint status. |
+
+#### `updateEvidence` — keeping ADF metrics accurate
+
+Call after code changes that affect tracked metrics:
+
+```json
+{ "tool": "updateEvidence" }
+{ "tool": "updateEvidence", "dryRun": true }
+{ "tool": "updateEvidence", "metrics": ["total_loc", "test_count"] }
+```
+
+Returns measured values, per-file changes, constraint status, and a hint to run `charter adf sync --write` to update `.adf.lock`.
+
+---
+
+## charter context
+
+Pre-digested repo brief for AI agents. Composes routes (surface), hotspots (blast), sensitivity tags, and governance posture into a single bounded markdown document.
+
+```bash
+npx charter context                   # print brief + write .charter/context.md
+npx charter context --stdout-only     # print only, no file write
+npx charter context --verbose         # no token ceiling (for human reading)
+npx charter context --write           # write .charter/context.md only (for hooks)
+```
+
+| Section | Source |
+|---------|--------|
+| Identity | `.charter/config.json`, `manifest.adf`, `package.json` |
+| Surface | `charter surface` (routes + D1 tables) |
+| Hotspots | `charter blast` (top hot files by importer count) |
+| Sensitivity | `.charter/config.json` + ADF `SENSITIVITY` sections |
+| Governance | `.ai/manifest.adf` module routing |
+
+**Token budget:** capped at 2000 tokens. Sections truncated in this order when over budget: hotspots tail → D1 tables → routes → governance ON_DEMAND entries. Use `--verbose` to remove the ceiling.
+
+**MCP:** `charter serve` registers `charter_brief` — call it first in any agent session.
+
+**Post-commit hook** (keeps brief fresh):
+```bash
+echo 'charter context --write' >> .git/hooks/post-commit
+chmod +x .git/hooks/post-commit
+```
+
+---
+
+## charter context-refresh
+
+Generates a live session snapshot and writes it to `.ai/context.adf` and `.ai/context.snapshot.json`.
+
+```bash
+npx charter context-refresh
+npx charter context-refresh --sources git
+npx charter context-refresh --sources git,github
+npx charter context-refresh --sources repo-intel
+npx charter context-refresh --once --ttl-minutes 30
+npx charter context-refresh --format json
+```
+
+| Flag | Description |
+|------|-------------|
+| `--sources <csv>` | Sources: `git`, `github`, `repo-intel` |
+| `--output <path>` | Mirror a markdown snapshot to a file |
+| `--ai-dir <dir>` | Target ADF directory (default: `.ai`) |
+| `--once` | Skip refresh when snapshot is newer than TTL |
+| `--ttl-minutes <n>` | TTL window used by `--once` (default: `30`) |
+| `--force` | Bypass TTL and refresh immediately |
+
+| Source | Description |
+|--------|-------------|
+| `git` | Local git branch, working tree, and recent commit log |
+| `github` | Open issues from the GitHub API (requires `GITHUB_TOKEN`) |
+| `repo-intel` | GitHub history via `gh` CLI — issues, PRs, releases, computed summary. Writes `.charter/repo-intel/snapshot.json`. Skips gracefully when `gh` is unavailable. |
+
+---
 
 ## Global Flags
 
@@ -369,7 +560,7 @@ Requires at least one of `--files` or `--keywords`. File path keyword extraction
 | `--format json` | Machine-readable output with stable schemas |
 | `--ci` | Non-interactive, deterministic exit codes |
 | `--yes` | Accept all prompts (for automation) |
-| `--preset <name>` | Stack preset (`worker`, `frontend`, `backend`, `fullstack`, `docs`) |
+| `--preset <name>` | Stack preset (`worker`, `frontend`, `backend`, `fullstack`, `docs`, `rust-wasm`) |
 | `--detect-only` | Setup mode: detect stack/preset and exit |
 | `--no-dependency-sync` | Setup mode: do not rewrite `@stackbilt/cli` devDependency |
 | `--force` | Overwrite existing files (hooks, ADF modules, config) |
