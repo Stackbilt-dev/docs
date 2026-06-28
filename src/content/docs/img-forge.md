@@ -13,10 +13,10 @@ img-forge is Stackbilder's AI image generation service. Part of the [Stackbilt e
 
 Submit a text prompt, get back a generated image. Supports 5 quality tiers (SDXL Lightning through Gemini 3 Pro), img2img editing, async job queuing, and content-addressed storage on R2.
 
-Available at `imgforge.stackbilt.dev` with API key, OAuth 2.1 (MCP), or session authentication. Also accessible via the MCP server and a forthcoming CLI tool.
+Available at `imgforge.stackbilt.dev` with API key, OAuth 2.1 (MCP), or session authentication. Also accessible via the MCP server and the `@img-forge/cli` CLI.
 
 **Direct gateway:** `imgforge.stackbilt.dev`
-**MCP server:** `forge-mcp.stackbilder.com/mcp`
+**MCP server:** `imgforge-mcp.stackbilder.com`
 
 ---
 
@@ -50,7 +50,7 @@ MCP clients follow the standard OAuth 2.1 + PKCE flow:
 
 ### Anonymous
 
-No credentials required. Rate-limited to 5 images/month per IP.
+No credentials required. Rate-limited to 100 images/month per IP.
 
 ---
 
@@ -328,7 +328,7 @@ When `type` changes to `"unlocked"`, the model is live for Pro subscribers with 
 
 ## CLI
 
-`@img-forge/cli` is a zero-dependency Node.js CLI (requires Node ≥ 18.3). Not yet published to npm — coming soon.
+`@img-forge/cli` is a zero-dependency Node.js CLI (requires Node ≥ 18.3).
 
 **Authentication:** Set `IMGFORGE_API_KEY` in your environment, or pass `--key <key>` per command.
 
@@ -377,7 +377,7 @@ Get the status and asset URL for a specific job.
 
 img-forge exposes a dedicated MCP server for AI agents. Claude Code, Cursor, or any MCP client can generate images, list models, check jobs, and manage billing.
 
-**Endpoint:** `https://forge-mcp.stackbilder.com/mcp`
+**Endpoint:** `https://imgforge-mcp.stackbilder.com/`
 
 **Auth:** OAuth 2.1 + PKCE (recommended) or `Authorization: Bearer <imgf_*>` for API key access.
 
@@ -390,7 +390,7 @@ Add to `.mcp.json`:
   "mcpServers": {
     "img-forge": {
       "type": "http",
-      "url": "https://forge-mcp.stackbilder.com/mcp",
+      "url": "https://imgforge-mcp.stackbilder.com/",
       "headers": {
         "Authorization": "Bearer ${IMG_FORGE_API_KEY}"
       }
