@@ -83,7 +83,8 @@ Returns all available models with their capabilities, billing tier, and — for 
       "capabilities": { "txt2img": true, "img2img": false, "inpaint": false, "negative_prompt": false, "seed_control": false },
       "cost_tier": "medium",
       "latency_class": "slow",
-      "output_types": ["image/png", "image/jpeg"],
+      "credits_per_request": 5,
+      "output_types": ["png", "webp", "avif"],
       "default_size": "1024x768",
       "is_available": true
     },
@@ -92,6 +93,7 @@ Returns all available models with their capabilities, billing tier, and — for 
       "quality_tier": "ultra",
       "is_default": false,
       "provider": "openai",
+      "credits_per_request": 10,
       "is_available": false,
       "unlock_status": {
         "type": "community_milestone",
@@ -108,9 +110,11 @@ Returns all available models with their capabilities, billing tier, and — for 
 
 **`is_default: true`** models are the ones selected when you pass a `quality_tier`. **`is_default: false`** models are selectable overrides — pass them via `openai_model` or `cf_model` on generate.
 
+**`credits_per_request`** — integer credit cost per generation. `null` for CF selectable models (billing is determined by the caller's `quality_tier` param, not the model itself). Always set for tier-default models and OpenAI models.
+
 **`unlock_status`** appears on all frontier (OpenAI + Gemini) models. When `type: "community_milestone"`, the model is locked behind a funded community goal. `funded_basis: true` means the actual unlock trigger is committed revenue, not raw signup count. When `type: "unlocked"`, the model is active.
 
-The endpoint accepts optional auth — authenticated callers may see tier-restricted models not shown to anonymous callers.
+The endpoint accepts optional auth. Frontier models (OpenAI + Gemini) are always visible to all callers with their `unlock_status` — so anonymous visitors can see community milestone progress. Non-frontier models with tier restrictions are silently omitted for callers who don't have the required subscription.
 
 ---
 
@@ -242,7 +246,7 @@ Append `?preset=thumbnail|standard|hero|portrait` to receive a resized variant.
 GET /v2/health
 ```
 
-Returns `{ "status": "ok", "version": "0.2.0" }`.
+Returns `{ "status": "ok", "version": "0.3.0" }`.
 
 ---
 
@@ -264,7 +268,7 @@ Returns `{ "status": "ok", "version": "0.2.0" }`.
 
 Pass alongside `quality_tier` to override the default model for a tier.
 
-**OpenAI models** — pass via `openai_model`. All bill at ultra (10 cr) currently; `credits_per_request` per model is tracked in #164 for post-launch. Require Pro subscription. `gpt-image-1.5` and `gpt-image-2` are additionally community-milestone-locked.
+**OpenAI models** — pass via `openai_model`. All bill at ultra (`credits_per_request: 10`). Require Pro subscription. `gpt-image-1.5` and `gpt-image-2` are additionally community-milestone-locked.
 
 | `openai_model` value | Notes |
 |---------------------|-------|
