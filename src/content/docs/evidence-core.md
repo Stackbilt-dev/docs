@@ -16,7 +16,9 @@ lastVerified: "2026-06-27"
 
 Post-March 2024 Google core update and November 2024 site reputation abuse update, AI-generated content without E-E-A-T signals gets buried. Most SEO tooling emits vague guidance. `evidence-core` emits **concrete actions tied to specific Google policy versions** — exactly what's missing and what to add.
 
-This package is the OSS core of **Evidence Engine**, a pre-publish content-quality gate available on [Stackbilder Pro](https://stackbilder.com).
+Part of the [Stackbilt ecosystem](/ecosystem) alongside [`@stackbilt/audit-chain`](/audit-chain) (which makes evidence decisions tamper-provable) and [worker-observability](/worker-observability). See [Security](/security#content-provenance--audit-chain) for the full Content Provenance architecture.
+
+This package is the OSS core of **Evidence Engine**, a pre-publish content-quality gate available on [Stackbilder Pro](/platform).
 
 ---
 

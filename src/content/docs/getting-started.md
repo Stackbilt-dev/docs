@@ -13,6 +13,8 @@ tag: "02"
 
 
 
+Charter is one piece of the [Stackbilt ecosystem](/ecosystem) — open-source governance and context tooling alongside [AEGIS Core](/aegis-core), [evidence-core](/evidence-core), [audit-chain](/audit-chain), and the [Stackbilder platform](/platform).
+
 ## The Problem
 
 You write a CLAUDE.md. You add a `.cursorrules`. You paste instructions into GEMINI.md. Your AI agent loads all of it into the context window -- 10,000 tokens of flat, unstructured rules competing with the actual work.
@@ -213,7 +215,9 @@ charter adf init                     # Scaffold .ai/ context directory
 
 ### Claude Code Integration (MCP)
 
-`charter serve` exposes your `.ai/` modules as an MCP server. Add it to `.claude/settings.json`:
+`charter serve` exposes your `.ai/` modules as an MCP server. For connecting AI agents to the broader Stackbilt platform (scaffolding, image generation, architecture flows), see the [MCP Gateway](/mcp).
+
+Add Charter's own MCP server to `.claude/settings.json`:
 
 ```json
 {
@@ -267,6 +271,8 @@ Charter works across WSL, PowerShell, CMD, macOS, and Linux. All git operations 
 
 ## Command Reference
 
+For complete flag documentation and advanced usage, see the [CLI Reference](/cli-reference).
+
 - `charter`: show repo risk/value snapshot and recommended next action
 - `charter bootstrap [--ci github] [--preset <name>] [--yes] [--skip-install] [--skip-doctor]`: one-command onboarding (detect + setup + ADF + migrate + install + doctor)
 - `charter setup [--ci github] [--preset <worker|frontend|backend|fullstack|docs>] [--detect-only] [--no-dependency-sync]`: detect stack and scaffold `.charter/` baseline
@@ -302,6 +308,8 @@ Global options: `--config <path>`, `--format text|json`, `--ci`, `--yes`.
 - `2`: runtime/config/usage error
 
 ## CI Integration
+
+Charter CI governance pairs naturally with the [Stackbilder platform](/platform) — use Charter to enforce commit governance and ADF metric ceilings, and the platform's [REST API](/api-reference) or [MCP gateway](/mcp) for architecture generation and scaffolding.
 
 - Reusable template: `.github/workflows/governance.yml`
 - Generated in target repos by `charter setup --ci github`: `.github/workflows/charter-governance.yml`

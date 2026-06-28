@@ -15,6 +15,8 @@ lastVerified: "2026-06-27"
 **A persistent AI agent framework for Cloudflare Workers.**  
 **GitHub:** [Stackbilt-dev/aegis-oss](https://github.com/Stackbilt-dev/aegis-oss) · Apache-2.0
 
+Part of the [Stackbilt ecosystem](/ecosystem) alongside [Charter CLI](/getting-started), [evidence-core](/evidence-core), [audit-chain](/audit-chain), and [worker-observability](/worker-observability).
+
 Unlike chat-based AI tools that forget between sessions, AEGIS maintains persistent identity, memory, and state across every interaction. It runs on the Cloudflare Workers free tier with Workers AI as the base inference path. Claude and Groq are optional executor upgrades.
 
 ---
@@ -39,7 +41,7 @@ Unlike chat-based AI tools that forget between sessions, AEGIS maintains persist
 | **Entropy Detection** | Monitors for ghost tasks (>7d stale), dormant goals (>14d), stale agenda items. Calculates system entropy score. Surfaced in the daily digest. |
 | **MCP Server** | 20+ tools exposed via the Model Context Protocol. Connect any MCP-compatible client (Claude Code, Cursor, Codex). |
 | **Content Pipeline** | Scheduled content generation and social media drip posting via AT Protocol. |
-| **ADF Governance** | `.ai/` config files control behavior, constraints, and architectural rules. Version-controlled agent configuration. |
+| **ADF Governance** | `.ai/` config files control behavior, constraints, and architectural rules. Version-controlled agent configuration — see [Charter CLI](/getting-started). |
 
 ---
 
@@ -137,7 +139,9 @@ The kernel classifies intent and routes to the appropriate executor. Procedural 
 
 ## MCP server
 
-AEGIS exposes a Model Context Protocol server at `/mcp` on your deployed worker. Connect Claude Code or any MCP client:
+AEGIS exposes a Model Context Protocol server at `/mcp` on your deployed worker. For the Stackbilt-hosted MCP gateway that connects agents to the broader platform (scaffolding, img-forge, architecture flows), see [MCP Gateway](/mcp).
+
+Connect Claude Code or any MCP client to AEGIS directly:
 
 ```json
 {

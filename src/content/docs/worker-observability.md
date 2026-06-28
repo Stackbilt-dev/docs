@@ -17,6 +17,8 @@ lastVerified: "2026-06-27"
 > npm install github:Stackbilt-dev/worker-observability
 > ```
 
+Part of the [Stackbilt ecosystem](/ecosystem). Pairs naturally with [`@stackbilt/audit-chain`](/audit-chain) for tamper-evident audit logs and [`@stackbilt/evidence-core`](/evidence-core) for content quality signals. The hosted Pro product on [Stackbilder](/platform) wraps this library with D1-backed storage and a live dashboard.
+
 A complete monitoring stack extracted from a production orchestration platform. Zero production dependencies — uses only the Web Crypto API and Cloudflare bindings.
 
 ---

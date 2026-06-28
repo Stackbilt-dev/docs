@@ -15,12 +15,12 @@ Stackbilder is built on multiple complementary tools that enforce governance acr
 
 | Tool | License | Role |
 |------|---------|------|
-| **Charter** (`@stackbilt/cli`) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
+| **[Charter](/getting-started)** (`@stackbilt/cli`) — [CLI Reference](/cli-reference) | Apache-2.0 (open source) | Local + CI governance runtime with ADF context compiler |
 | **[AEGIS Core](/aegis-core)** (`@stackbilt/aegis-core`) | Apache-2.0 (open source) | Persistent AI agent framework — multi-tier memory, autonomous goals, dreaming cycles, MCP native |
 | **[evidence-core](/evidence-core)** (`@stackbilt/evidence-core`) | Apache-2.0 (open source) | E-E-A-T gap detection and scoring library. Three policy presets (Google Nov 2024 default). Usable standalone. |
 | **[audit-chain](/audit-chain)** (`@stackbilt/audit-chain`) | Apache-2.0 (open source) | Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1). SHA-256 hash-chained records. |
 | **[worker-observability](/worker-observability)** ([GitHub](https://github.com/Stackbilt-dev/worker-observability)) | Apache-2.0 (open source) | ODD-driven telemetry SDK for Cloudflare Workers. Metrics, traces, spans, SLI/SLO. Not yet published to npm — install from source. |
-| **Stackbilder** | Commercial | Unified platform on `stackbilder.com` — architecture generation, scaffold engine, Evidence Engine, Content Provenance, Worker Observability, Consultations, img-forge |
+| **[Stackbilder](/platform)** | Commercial | Unified platform on `stackbilder.com` — architecture generation, scaffold engine, Evidence Engine, Content Provenance, Worker Observability, Consultations, [img-forge](/img-forge) |
 
 Charter and AEGIS are the open-source foundations. Stackbilder is the commercial platform that wraps them.
 
@@ -31,7 +31,7 @@ Charter and AEGIS are the open-source foundations. Stackbilder is the commercial
 | **Stackbilder** | `stackbilder.com` | Unified platform Worker — UI, REST API, scaffold engine, governance, Evidence Engine, Observability |
 | **Auth** | `auth.stackbilt.dev` | Authentication service (Better Auth + D1, OAuth, SSO) — service binding from Stackbilder |
 | **img-forge** | `imgforge.stackbilt.dev` | Multi-provider image generation gateway — service binding from Stackbilder |
-| **MCP gateway** | `mcp.stackbilt.dev/mcp` | OAuth-authenticated MCP Worker that proxies to TarotScript / img-forge / Engine / Deployer. Sibling consumer of the platform's product workers (see [MCP Gateway](/mcp)) |
+| **MCP gateway** | `mcp.stackbilt.dev/mcp` | OAuth-authenticated MCP Worker that proxies to [TarotScript](/tarotscript) / [img-forge](/img-forge) / Engine / Deployer. Sibling consumer of the platform's product workers (see [MCP Gateway](/mcp)) |
 | **Trust verifier** | `trust.stackbilder.com/evidence/:hash` | Public Evidence Engine receipt verifier (anti-probe semantics) |
 
 ## How They Fit Together
@@ -99,6 +99,8 @@ npx charter adf init    # scaffold .ai/ context directory
 **Governance commands:** `bootstrap`, `validate`, `drift`, `audit`, `classify`, `hook install`, `score`, `serve`, `context-refresh`.
 **ADF commands:** `adf init`, `adf fmt`, `adf patch`, `adf create`, `adf bundle`, `adf sync`, `adf evidence`, `adf migrate`, `adf metrics`.
 
+See the [CLI Reference](/cli-reference) for full flag and option documentation, or the [Charter Kit guide](/getting-started) for quickstart and conceptual overview.
+
 For quantitative analysis of ADF's impact on autonomous system architecture, see the [Context-as-Code white paper](https://github.com/Stackbilt-dev/charter/blob/main/papers/context-as-code-v1.1.md).
 <!-- DOCSYNC:END:charter-oss-ecosystem -->
 
@@ -115,6 +117,8 @@ Available via:
 - **Browser UI** at [stackbilder.com](https://stackbilder.com) (interactive, human users)
 - **REST API** at `stackbilder.com/api/*` (direct HTTP — Charter CLI, server-to-server, CI; see [API Reference](/api-reference))
 - **MCP gateway** at `mcp.stackbilt.dev/mcp` (OAuth-authenticated agent access; routes scaffold/image/deploy tools to the same backend Workers — see [MCP Gateway](/mcp))
+
+See the [Stackbilder Platform](/platform) docs for the full 6-mode pipeline, governance tiers, and scaffold engine details. For security architecture and supply chain controls, see [Security](/security).
 
 ### Lightweight Agent Pattern
 

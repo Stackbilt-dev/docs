@@ -14,6 +14,8 @@ lastVerified: "2026-06-27"
 
 **GitHub:** [Stackbilt-dev/audit-chain](https://github.com/Stackbilt-dev/audit-chain) · Apache-2.0
 
+Part of the [Stackbilt ecosystem](/ecosystem). Pairs with [`@stackbilt/evidence-core`](/evidence-core) to make E-E-A-T decisions tamper-provable, and with [worker-observability](/worker-observability) for complementary monitoring. Used in production in the [Stackbilder platform](/platform) Content Provenance API — see [Security](/security#content-provenance--audit-chain) for the full architecture.
+
 Tamper-evident audit trail for Cloudflare Workers in under 200 lines of core logic. SHA-256 hash chaining with R2 immutability and D1 indexing. Zero production dependencies — uses only the Web Crypto API and Cloudflare bindings.
 
 ---

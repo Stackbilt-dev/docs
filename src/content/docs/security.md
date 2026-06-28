@@ -67,7 +67,7 @@ Where platform APIs exist, we use them. Cloudflare Workers provide `fetch`, `cry
 
 ## MCP Tool Risk Classification
 
-Every tool exposed through the Model Context Protocol declares a risk level that determines enforcement logic:
+Every tool exposed through the [MCP Gateway](/mcp) declares a risk level that determines enforcement logic:
 
 | Level | Classification | Enforcement |
 |-------|---------------|-------------|
@@ -80,7 +80,7 @@ Tools follow a "One Tool = One Explicit Capability" pattern. Tools must not perf
 
 ## Autonomous Agent Safety
 
-Stackbilt operates autonomous AI agents for code generation, testing, and infrastructure tasks. These agents are governed by a four-layer safety architecture:
+Stackbilt operates autonomous AI agents for code generation, testing, and infrastructure tasks — including [AEGIS Core](/aegis-core) for persistent agent state and the [MCP Gateway](/mcp) for agent-accessible tooling. These agents are governed by a four-layer safety architecture:
 
 1. **Hard stops:** Runtime hooks block destructive operations (`rm -rf`, `git push --force`, `DROP TABLE`, production deploys), secret access, and interactive prompts.
 2. **Soft stops:** Mission brief constraints injected into agent system prompts with explicit directory and file-scope permissions.
@@ -162,8 +162,8 @@ Receipts can be independently verified at `trust.stackbilder.com/evidence/:hash`
 
 The validation and audit layers are backed by two Apache-2.0 libraries, both available on npm:
 
-- **[`@stackbilt/evidence-core`](https://www.npmjs.com/package/@stackbilt/evidence-core) v0.1.0** — EEAT gap detection and scoring. Policy presets, pillar validators, and suggestion generation. Usable standalone, outside the AEGIS platform.
-- **[`@stackbilt/audit-chain`](https://www.npmjs.com/package/@stackbilt/audit-chain) v0.1.0** — Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1 backend). Not specific to content validation — any event type can be written to any namespace.
+- **[`@stackbilt/evidence-core`](/evidence-core)** ([npm](https://www.npmjs.com/package/@stackbilt/evidence-core)) v0.1.0 — EEAT gap detection and scoring. Policy presets, pillar validators, and suggestion generation. Usable standalone, outside the AEGIS platform.
+- **[`@stackbilt/audit-chain`](/audit-chain)** ([npm](https://www.npmjs.com/package/@stackbilt/audit-chain)) v0.1.0 — Domain-agnostic tamper-evident audit logging for Cloudflare Workers (R2 + D1 backend). Not specific to content validation — any event type can be written to any namespace.
 
 ## Reporting a Vulnerability
 

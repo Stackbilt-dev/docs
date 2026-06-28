@@ -11,7 +11,7 @@ tag: "04"
 
 > **Architect v2 — Active Build.** The platform is in its v2 build cycle. Docs reflect the current stable surface; new capabilities are landing continuously.
 
-Stackbilder is a governance-enforced architecture planning tool that produces sprint-ready ADRs, deployable scaffolds, and structured artifacts — not vague suggestions.
+Stackbilder is a governance-enforced architecture planning tool that produces sprint-ready ADRs, deployable scaffolds, and structured artifacts — not vague suggestions. It sits at the center of the [Stackbilt ecosystem](/ecosystem), with [Charter CLI](/getting-started) handling local governance, the [MCP Gateway](/mcp) enabling agent access, and [TarotScript](/tarotscript) powering the deterministic scaffold engine.
 
 ## The 6-Mode Pipeline
 
@@ -95,7 +95,7 @@ Every account is associated with a plan tier that determines rate limits and fea
 
 ## AI Model Routing
 
-The platform applies a model policy per request. Provider/model selection is tier-aware. Phase 1 scaffolds use deterministic TarotScript (no LLM). Phase 2 (Pro/Team) adds an LLM polish pass via Cerebras.
+The platform applies a model policy per request. Provider/model selection is tier-aware. Phase 1 scaffolds use deterministic [TarotScript](/tarotscript) (no LLM). Phase 2 (Pro/Team) adds an LLM polish pass via Cerebras. Image generation runs through [img-forge](/img-forge) (5 quality tiers, Cloudflare/OpenAI/Gemini providers).
 
 ## Output Artifacts
 
@@ -122,7 +122,7 @@ Validation checks four pillars — Experience, Expertise, Authoritativeness, Tru
 
 Receipts can be independently verified at `trust.stackbilder.com/evidence/:hash`.
 
-The underlying libraries — `@stackbilt/evidence-core` and `@stackbilt/audit-chain` — are both Apache-2.0 and available on npm. See [Security](/security#content-provenance--audit-chain) for the full architecture.
+The underlying libraries — [`@stackbilt/evidence-core`](/evidence-core) and [`@stackbilt/audit-chain`](/audit-chain) — are both Apache-2.0 and available on npm. See [Security](/security#content-provenance--audit-chain) for the full architecture.
 
 ## Access
 

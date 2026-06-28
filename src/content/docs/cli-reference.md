@@ -11,6 +11,8 @@ tag: "03"
 
 Use `npx charter ...` if Charter is installed as a local dev dependency. Use `charter ...` if installed globally.
 
+For conceptual overview and quickstart, see [Charter Kit](/getting-started). For how Charter fits into the full Stackbilt stack, see the [Ecosystem](/ecosystem) overview. The [Stackbilder platform](/platform) consumes Charter's governance output in its CI pipeline.
+
 ## Governance Commands
 
 ### charter validate

@@ -11,7 +11,9 @@ sourceSlug: "mcp-gateway-architecture"
 
 ## What this is
 
-The **Stackbilt MCP Gateway** is a Cloudflare Worker that exposes the platform's product backends as a single MCP-compliant remote server, OAuth-authenticated. It's the third leg of Stackbilder's three-consumer fractal: the same backend service bindings power the web UI on `stackbilder.com`, the Charter CLI, and the gateway. The gateway exists so MCP-native agents (Claude Code, Claude Desktop, custom MCP clients) get a single OAuth endpoint without taking a dependency on the web UI's session model.
+The **Stackbilt MCP Gateway** is a Cloudflare Worker that exposes the platform's product backends as a single MCP-compliant remote server, OAuth-authenticated. It's the third leg of Stackbilder's three-consumer fractal: the same backend service bindings power the web UI on `stackbilder.com`, the [Charter CLI](/getting-started), and the gateway. The gateway exists so MCP-native agents (Claude Code, Claude Desktop, custom MCP clients) get a single OAuth endpoint without taking a dependency on the web UI's session model.
+
+For the full platform architecture this gateway sits in front of, see [Stackbilder Platform](/platform). For the REST API that the gateway and CLI share, see [API Reference](/api-reference). For the ecosystem overview, see [Ecosystem](/ecosystem).
 
 **Endpoint:** `https://mcp.stackbilt.dev/mcp`
 
@@ -226,8 +228,8 @@ Streamable HTTP sessions use the `Mcp-Session-Id` header. The first `initialize`
 
 | Prefix | Backend | Description |
 |---|---|---|
-| `scaffold_*` | `TAROTSCRIPT` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment. `scaffold_create` response includes `cloudflareManifest: { status, stale, valid_until? }`. |
-| `image_*` | `IMG_FORGE` | AI image generation (5 quality tiers: draft / standard / premium / ultra / ultra_plus). |
+| `scaffold_*` | `TAROTSCRIPT` | Deterministic project scaffolding, classification, GitHub publishing, CF deployment. See [TarotScript Runtime](/tarotscript) for the direct API surface. `scaffold_create` response includes `cloudflareManifest: { status, stale, valid_until? }`. |
+| `image_*` | `IMG_FORGE` | AI image generation (5 quality tiers: draft / standard / premium / ultra / ultra_plus). See [img-forge API](/img-forge) for direct REST access, model catalog, and billing. |
 | `agent_*` | `TAROTSCRIPT` | C-level agent consultations (CTO, CISO, CFO, CPO, architect). |
 | `billing_*` | `AUTH_SERVICE` | Credit balance, quota status, and autonomous credit purchase. |
 

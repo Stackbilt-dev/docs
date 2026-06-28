@@ -15,6 +15,8 @@ sourceSlug: "tarotscript-reference"
 **Base URL:** `https://tarotscript-worker.blue-pine-edf6.workers.dev`  
 **MCP Gateway access:** `https://mcp.stackbilt.dev/mcp` (see [MCP Gateway](./mcp.md))
 
+TarotScript is the deterministic scaffold and agent consultation engine that powers the [Stackbilder platform](/platform). Part of the [Stackbilt ecosystem](/ecosystem). The platform-facing REST interface is documented in the [API Reference](/api-reference#scaffolder-flows) and [Agent Consultations](/api-reference#agent-consultations) sections.
+
 TarotScript is a non-deterministic, context-dependent programming language built on Tarot and Hermetic mechanics. The runtime is closed-source and hosted. This page documents the **public interface** — REST endpoints, MCP tools, and contract schemas — not the language internals.
 
 For the language syntax and spread authoring, see `docs/deck-authoring.md` and `docs/agents.md` in the tarotscript repo.

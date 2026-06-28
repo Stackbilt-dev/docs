@@ -13,9 +13,9 @@ tag: "07"
 **Last updated:** 2026-05-02
 **Worker:** stackbilt-web (Astro SSR on Cloudflare, 47 API route files / 60 HTTP method handlers bundled in one worker)
 
-All API routes live at `/api/*` paths on `stackbilder.com`. They are Astro server-side endpoints compiled into the stackbilt-web Cloudflare Worker at deploy time. There is no separate API worker. Cross-worker concerns (authentication, TarotScript execution, img-forge rendering, CodeBeast ledger) are handled via Cloudflare service bindings from inside this worker.
+All API routes live at `/api/*` paths on `stackbilder.com`. They are Astro server-side endpoints compiled into the stackbilt-web Cloudflare Worker at deploy time. There is no separate API worker. Cross-worker concerns (authentication, [TarotScript](/tarotscript) execution, [img-forge](/img-forge) rendering, CodeBeast ledger) are handled via Cloudflare service bindings from inside this worker.
 
-The API is the canonical contract for all four consumer types: the web UI at `/app/*`, the MCP gateway, the Charter CLI, and direct API consumers. No consumer is privileged. See memory `feedback_two_consumer_fractal` for the principle.
+The API is the canonical contract for all four consumer types: the web UI at `/app/*`, the [MCP gateway](/mcp), the [Charter CLI](/getting-started), and direct API consumers. No consumer is privileged. For platform architecture and plan tiers, see [Stackbilder Platform](/platform). For the full ecosystem context, see [Ecosystem](/ecosystem).
 
 ---
 
@@ -538,7 +538,7 @@ curl -X POST https://stackbilder.com/api/agents/run \
 
 ## Evidence Engine
 
-E-E-A-T content quality tooling. See AEGIS wiki `evidence-engine-gap-fill-architecture` for full architecture.
+E-E-A-T content quality tooling backed by [`@stackbilt/evidence-core`](/evidence-core) (Apache-2.0, usable standalone). See AEGIS wiki `evidence-engine-gap-fill-architecture` for full architecture.
 
 ### `POST /api/v1/evidence/validate`
 
@@ -1260,7 +1260,7 @@ File `role` values: `scaffold` | `config` | `governance` | `test` | `doc`.
 
 ## Worker observability
 
-Pro feature. See CLAUDE.md "Worker Observability" section for full COGS-containment architecture.
+Pro feature backed by [`@stackbilt/worker-observability`](/worker-observability) (Apache-2.0, installable standalone). See the [worker-observability docs](/worker-observability) for the OSS library and [Stackbilder Platform](/platform) for the hosted dashboard.
 
 **Internal telemetry filter.** All user-facing read endpoints in this section (`/summary`, `/traces`, `/traces/:id`) apply `INTERNAL_WORKER_SQL_FILTER` from `src/lib/observe.ts` — `worker_name NOT LIKE 'internal:%'`. stackbilt-web writes internal calibration telemetry (e.g. evidence gap-fill runs per #95) directly to `OBSERVE_DB` using the `internal:*` prefix so those rows never surface as phantom workers in a tenant's Observe UI. If you add a new user-facing query that reads `traces`/`spans`/`logs` by `worker_name`, apply this filter.
 
@@ -1854,8 +1854,13 @@ All admin routes require a session with an admin user (`admin@stackbilt.dev` or 
 
 ### Related docs
 
-- `CLAUDE.md` — canonical repo-level context (bindings, security headers, auth, billing, observability architecture)
-- AEGIS wiki `consult-harness-web-surface` — architecture for `/app/consult/*` + agents routes
-- AEGIS wiki `evidence-engine-gap-fill-architecture` — architecture for `/api/v1/evidence/*`
-- AEGIS wiki `trust-page-governance-timeline-architecture` — CodeBeast `/decide` seam for `/trust/*`
-- AEGIS wiki `trust-bundle-storage-architecture` — R2 + D1 flow for `/api/trust/bundle/*`
+- [Stackbilder Platform](/platform) — 6-mode pipeline, governance tiers, scaffold engine
+- [MCP Gateway](/mcp) — OAuth-authenticated agent access to the same backend workers
+- [TarotScript Runtime](/tarotscript) — deterministic scaffold and agent consultation engine
+- [img-forge API](/img-forge) — image generation REST API and MCP tools
+- [evidence-core](/evidence-core) — OSS E-E-A-T validation library powering the Evidence Engine
+- [audit-chain](/audit-chain) — OSS tamper-evident audit log backing the Trust Page
+- [worker-observability](/worker-observability) — OSS monitoring library for Cloudflare Workers
+- [Security](/security) — supply chain controls, MCP tool risk classification, vulnerability reporting
+- [Charter CLI](/getting-started) — governance CLI that integrates with this API
+- [Ecosystem](/ecosystem) — full overview of all Stackbilt tools
