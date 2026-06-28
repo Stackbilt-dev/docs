@@ -2,6 +2,6 @@
 set -euo pipefail
 
 echo "[pre-commit] Building site to validate..."
-npm run build --silent
+pnpm run build --silent
 
 echo "[pre-commit] Build passed."
