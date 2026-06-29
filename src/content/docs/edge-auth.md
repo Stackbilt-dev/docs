@@ -72,7 +72,7 @@ Stripe is in **live mode** (`acct_1T8cxHL8cDQ0gdtT`). All Stripe API calls live 
 
 | Outcome | Meaning |
 |---------|---------|
-| `canceled` | Active subscription scheduled to cancel at period end; tier stays Pro/Team until `effectiveAt` |
+| `canceled` | Active subscription scheduled to cancel at period end; tier stays Pro/Agency until `effectiveAt` |
 | `no_subscription` | Admin/comp account; immediate tier flip |
 | `already_canceled` | Dangling `stripe_subscription_id`; immediate tier flip |
 
@@ -91,7 +91,7 @@ Stripe webhooks are handled entirely by edge-auth — there is no webhook handle
 
 OAuth sign-in (GitHub, Google) is handled at `auth.stackbilt.dev`. On completion, a session cookie is issued and the user is redirected back to the originating platform.
 
-SSO is available on Team tier.
+SSO is available on Pro and Agency tiers.
 
 ---
 

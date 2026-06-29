@@ -489,17 +489,16 @@ Requires a saved payment method (`billing_status.hasSavedCard: true`).
 
 ## Usage Limits
 
-| Plan | Monthly Images | Quality Tiers | Credits |
-|------|---------------|---------------|---------|
-| Free | 5 | Draft, Standard, Premium | 50 welcome grant (one-time) |
-| Credit pack only | By credits | Draft, Standard, Premium | ✅ |
-| Pro | 100 | Draft–Premium always; Ultra/Ultra+ after community milestone | — |
-| Team | Pooled | Same as Pro | — |
-| Agency | Unlimited | Same as Pro | 4,000/mo rollover¹ |
+| Plan | img-forge Credits | Quality Tiers | Notes |
+|------|-----------------|---------------|-------|
+| Free | 50 welcome (one-time) | Draft, Standard, Premium | — |
+| Credit pack only | Purchased pool | Draft, Standard, Premium | Builder ($12.50/500 cr) · Studio ($20/1,000 cr) |
+| Pro ($29/mo) | 1,000/month | Draft–Ultra+ | Ultra/Ultra+ after community milestone |
+| Agency ($75/mo) | 4,000/month · rollover¹ | Draft–Ultra+ | Priority queue; full platform access |
 
-¹ **Agency** ($75/mo) — credits accumulate indefinitely while active; unused balance carries forward each renewal. Expire 45 days after cancellation.
+¹ **Agency rollover** — credits accumulate indefinitely while active; unused balance carries forward each renewal. Expire 45 days after cancellation.
 
-**Onboarding credit grant:** All new accounts receive a **50-credit welcome bonus** on first signup (≈ 10 standard images). Credits are separate from the monthly image quota — they let you explore the service before your monthly allocation kicks in. Once exhausted, the 5-image/month free quota applies. Credits do not reset monthly.
+**Onboarding credit grant:** All new accounts receive a **50-credit welcome bonus** on first signup (≈ 10 standard images). Credits do not reset monthly and are consumed before subscription credits.
 
 **Ultra and OpenAI models require Pro (or higher).** Credit packs alone do not grant access to these tiers regardless of pack size. The community milestone additionally gates whether the models are active at all — even Pro subscribers cannot use them until the milestone is hit.
 
