@@ -174,6 +174,7 @@ curl -X POST https://imgforge.stackbilt.dev/v2/generate \
   "original_prompt": "Isometric pixel art of a cloud server room",
   "final_prompt": "Isometric pixel art of a cloud server room, precise geometric forms...",
   "enhancement_logic": "...",
+  "model_id": "gemini-3.1-flash-image-preview",
   "quality_tier": "premium",
   "asset_url": null,
   "preset_url": null,
@@ -207,6 +208,7 @@ Check the state of a generation job. Jobs are scoped to the authenticated tenant
 | `job_id` | UUID |
 | `state` | Current job state |
 | `quality_tier` | Billing tier used |
+| `model_id` | Actual model identifier used (e.g. `gemini-3.1-flash-image-preview`, `@cf/black-forest-labs/flux-2-dev`) |
 | `original_prompt` | Prompt as submitted |
 | `final_prompt` | Prompt after enhancement pipeline |
 | `enhancement_logic` | JSON describing how the prompt was enhanced |
