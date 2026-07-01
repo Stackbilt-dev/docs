@@ -5,7 +5,7 @@ section: "platform"
 order: 26
 color: "#f43f5e"
 tag: "26"
-lastVerified: "2026-06-28"
+lastVerified: "2026-07-01"
 ---
 
 # edge-auth
@@ -72,9 +72,11 @@ Stripe is in **live mode** (`acct_1T8cxHL8cDQ0gdtT`). All Stripe API calls live 
 
 | Outcome | Meaning |
 |---------|---------|
-| `canceled` | Active subscription scheduled to cancel at period end; tier stays Pro/Agency until `effectiveAt` |
+| `canceled` | Active Stripe subscription — canceled immediately (`DELETE /subscriptions/{id}`), not at period end. Tier flips to free right away; `effectiveAt` is the cancellation time, not a future date. |
 | `no_subscription` | Admin/comp account; immediate tier flip |
 | `already_canceled` | Dangling `stripe_subscription_id`; immediate tier flip |
+
+For Agency tenants specifically, cancellation does not forfeit unused credits immediately — remaining balance stays spendable for a 45-day grace period even though the tier has already reverted to free. See [img-forge's Usage Limits](/img-forge#usage-limits) for the credit-side behavior.
 
 Stripe webhooks are handled entirely by edge-auth — there is no webhook handler in any consuming worker.
 

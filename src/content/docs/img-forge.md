@@ -5,6 +5,7 @@ section: "platform"
 order: 9
 color: "#f472b6"
 tag: "09"
+lastVerified: "2026-07-01"
 ---
 
 # img-forge API
@@ -498,7 +499,7 @@ Requires a saved payment method (`billing_status.hasSavedCard: true`).
 | Pro ($29/mo) | 1,000/month | Draft–Ultra+ | Ultra/Ultra+ after community milestone |
 | Agency ($75/mo) | 4,000/month · rollover¹ | Draft–Ultra+ | Priority queue; full platform access |
 
-¹ **Agency rollover** — credits accumulate indefinitely while active; unused balance carries forward each renewal. Expire 45 days after cancellation.
+¹ **Agency rollover** — unused balance carries forward each renewal, capped at 8,000 credits (2× the monthly grant). Renewal grants beyond the cap are not banked. Remaining balance stays spendable for 45 days after cancellation, after which it's forfeited.
 
 **Onboarding credit grant:** All new accounts receive a **50-credit welcome bonus** on first signup (≈ 10 standard images). Credits do not reset monthly and are consumed before subscription credits.
 
