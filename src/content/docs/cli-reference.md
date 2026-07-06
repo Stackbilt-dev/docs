@@ -54,10 +54,10 @@ npx charter audit --range HEAD~10..HEAD
 
 Classifies a subject or change request into a governance scope.
 
-| Scope | Meaning |
-|---|---|
-| `SURFACE` | UI/copy only, low risk |
-| `LOCAL` | Contained to one module |
+| Scope           | Meaning                                |
+| --------------- | -------------------------------------- |
+| `SURFACE`       | UI/copy only, low risk                 |
+| `LOCAL`         | Contained to one module                |
 | `CROSS_CUTTING` | Touches multiple systems, requires ADR |
 
 ```bash
